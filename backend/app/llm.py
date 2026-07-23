@@ -27,16 +27,30 @@ def _gemini_client():
     return genai.Client(api_key=config.GEMINI_API_KEY)
 
 
-def _gemini_text(system: str | None, user_content: str, max_tokens: int) -> str:
+def _gemini_generate(contents, config_kwargs: dict):
+    """Calls generate_content with thinking disabled where supported. Some
+    model families (e.g. flash-lite) reject the thinking_config param outright
+    (400 INVALID_ARGUMENT) rather than ignoring it, so retry without it instead
+    of hardcoding which models support what — that list changes constantly."""
     from google.genai import types
 
     client = _gemini_client()
-    resp = client.models.generate_content(
-        model=config.GEMINI_MODEL,
-        contents=user_content,
-        config=types.GenerateContentConfig(
-            system_instruction=system, max_output_tokens=max_tokens
-        ),
+    try:
+        cfg = types.GenerateContentConfig(
+            thinking_config=types.ThinkingConfig(thinking_budget=0), **config_kwargs
+        )
+        return client.models.generate_content(model=config.GEMINI_MODEL, contents=contents, config=cfg)
+    except Exception as e:
+        if "INVALID_ARGUMENT" not in str(e):
+            raise
+        cfg = types.GenerateContentConfig(**config_kwargs)
+        return client.models.generate_content(model=config.GEMINI_MODEL, contents=contents, config=cfg)
+
+
+def _gemini_text(system: str | None, user_content: str, max_tokens: int) -> str:
+    resp = _gemini_generate(
+        user_content,
+        {"system_instruction": system, "max_output_tokens": max_tokens},
     )
     return resp.text
 
@@ -44,14 +58,9 @@ def _gemini_text(system: str | None, user_content: str, max_tokens: int) -> str:
 def _gemini_vision(image_bytes: bytes, prompt: str, max_tokens: int) -> str:
     from google.genai import types
 
-    client = _gemini_client()
-    resp = client.models.generate_content(
-        model=config.GEMINI_MODEL,
-        contents=[
-            types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg"),
-            prompt,
-        ],
-        config=types.GenerateContentConfig(max_output_tokens=max_tokens),
+    resp = _gemini_generate(
+        [types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg"), prompt],
+        {"max_output_tokens": max_tokens},
     )
     return resp.text
 

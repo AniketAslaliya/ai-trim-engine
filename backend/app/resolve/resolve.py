@@ -9,24 +9,31 @@ import json
 from app import config, llm
 from app.schemas import EDL, Clip, Constraints, Intent, Segment, Timeline, Transition
 
-# Predicate phrasings the intent-parser is instructed to use for simple,
-# directly-checkable fields — resolved with zero LLM calls.
-_DETERMINISTIC_KEYWORDS = {
+# Fields resolvable by direct boolean check on the Timeline — zero LLM calls.
+# Routed on Intent.target_signal (structured), never on predicate wording —
+# the predicate is free text the intent-parser can phrase however it wants,
+# so matching against it directly is fragile (see backend/README.md notes).
+_BOOLEAN_SIGNALS = {
     "is_silence": lambda seg: seg.is_silence,
-    "filler_word": lambda seg: len(seg.filler_words) > 0,
-    "filler words": lambda seg: len(seg.filler_words) > 0,
+    "filler_words": lambda seg: len(seg.filler_words) > 0,
 }
 
 
-def _try_deterministic(predicate: str, segments: list[Segment]) -> set[int] | None:
-    p = predicate.lower()
-    for keyword, check in _DETERMINISTIC_KEYWORDS.items():
-        if keyword in p:
-            return {s.id for s in segments if check(s)}
-    if "speaker" in p:
+def _try_deterministic(intent: Intent, segments: list[Segment]) -> set[int] | None:
+    signals = set(intent.target_signal)
+
+    if signals and signals <= set(_BOOLEAN_SIGNALS):
+        return {
+            s.id for s in segments
+            if any(_BOOLEAN_SIGNALS[sig](s) for sig in signals)
+        }
+
+    if signals == {"speaker"}:
+        p = intent.predicate.lower()
         for seg in segments:
             if seg.speaker and seg.speaker.lower() in p:
                 return {s.id for s in segments if s.speaker == seg.speaker}
+
     return None
 
 
@@ -35,7 +42,7 @@ _SEMANTIC_PROMPT = """You are matching a predicate against video segments.
 Predicate: {predicate}
 Operation: {operation}
 
-Segments (id, transcript, scene_tags, objects, audio_events):
+Segments (id, transcript, scene_tags, objects, audio_events, is_silence, has_filler_words):
 {segments_json}
 
 Return ONLY a JSON array of segment ids that satisfy the predicate. If operation is
@@ -52,6 +59,7 @@ def _resolve_semantic(intent: Intent, segments: list[Segment]) -> list[int]:
             "id": s.id, "transcript": s.transcript,
             "scene_tags": s.scene_tags, "objects": s.objects,
             "audio_events": s.audio_events,
+            "is_silence": s.is_silence, "has_filler_words": bool(s.filler_words),
         }
         for s in segments
     ]
@@ -103,7 +111,7 @@ def resolve(intent: Intent, timeline: Timeline) -> EDL:
         matched_ids = [s.id for s in segments]
         ranked_ids = []
     else:
-        det = _try_deterministic(intent.predicate, segments)
+        det = _try_deterministic(intent, segments)
         if det is not None:
             matched_ids = sorted(det)
             ranked_ids = []
