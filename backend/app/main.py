@@ -6,6 +6,7 @@ import shutil
 import uuid
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
 from app import config
@@ -17,6 +18,13 @@ from app.resolve.resolve import resolve
 from app.schemas import Timeline
 
 app = FastAPI(title="AI Trim Engine")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=config.CORS_ORIGINS,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def _timeline_path(video_id: str) -> str:

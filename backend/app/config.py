@@ -22,6 +22,9 @@ ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5")
 
 
+CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "http://localhost:3000").split(",")
+
+
 def llm_configured() -> bool:
     return bool(GEMINI_API_KEY) if LLM_PROVIDER == "gemini" else bool(ANTHROPIC_API_KEY)
 
