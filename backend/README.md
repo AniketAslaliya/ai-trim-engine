@@ -30,5 +30,6 @@ Poll `GET /jobs/{job_id}` until `status == "done"` (or `"failed"`, check `error`
 ## Notes on this scaffold
 
 - Job store is in-memory (`app/jobs/store.py`) — fine for a single-process day-one deploy; swap for Redis/DB before scaling past one worker.
-- Visual tagging (`app/extraction/visual_tags.py`) and semantic predicate resolution (`app/resolve/resolve.py: _resolve_semantic`) both call the Anthropic API; without `ANTHROPIC_API_KEY` set they degrade to empty results rather than crashing — the mechanical prompt group (silence, filler words) still works with zero API key.
+- LLM calls go through `app/llm.py`, a thin provider-agnostic wrapper — `LLM_PROVIDER=gemini` (default, free tier) or `LLM_PROVIDER=anthropic`. Pipeline code never imports a provider SDK directly, so switching providers is a `.env` change, not a code change.
+- Visual tagging (`app/extraction/visual_tags.py`) and semantic predicate resolution (`app/resolve/resolve.py: _resolve_semantic`) both call `app/llm.py`; without an API key configured for the selected provider they degrade to empty results rather than crashing — the mechanical prompt group (silence, filler words) still works with zero API key.
 - Deterministic resolution only recognizes a few keyword patterns today (`is_silence`, `filler word(s)`, `speaker`) — extend `_DETERMINISTIC_KEYWORDS` in `resolve.py` as more signals get added to the Timeline, per the "adding a new capability" section of the intent-pipeline skill.

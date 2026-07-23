@@ -107,7 +107,7 @@ output video + human-readable edit summary
 - Transcription: `faster-whisper` (local, free, word timestamps)
 - Scene detection: PySceneDetect (`detect-content`)
 - Visual tagging: CLIP zero-shot or a cheap VLM call per shot keyframe
-- Intent/reasoning LLM: Claude API (structured JSON output)
+- Intent/reasoning LLM: provider-agnostic (`backend/app/llm.py`) — Gemini free tier (`gemini-2.5-flash`) by default for day-one cost reasons, Claude API as a documented fallback via `LLM_PROVIDER=anthropic`. Structured JSON output either way.
 - Backend: FastAPI + ffmpeg, containerized, deployed on Render
 - Frontend: Next.js on Vercel (UI only — no heavy compute in serverless functions)
 - Job model: async — enqueue render job, poll/websocket for status (avoids serverless/HTTP timeouts)

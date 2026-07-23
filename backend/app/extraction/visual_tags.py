@@ -1,16 +1,16 @@
 """Sparse visual tagging: one VLM call per shot keyframe, never per-frame.
 
-Extracts a single mid-shot frame via ffmpeg and asks Claude for scene/object
-tags as JSON. Degrades to empty tags on any failure — extraction must never
-crash because tagging failed (see intent-pipeline skill: "degrade gracefully").
+Extracts a single mid-shot frame via ffmpeg and asks the configured LLM for
+scene/object tags as JSON. Degrades to empty tags on any failure — extraction
+must never crash because tagging failed (see intent-pipeline skill: "degrade
+gracefully").
 """
-import base64
 import json
 import subprocess
 import tempfile
 from pathlib import Path
 
-from app import config
+from app import config, llm
 
 _PROMPT = (
     "Look at this video frame. Return ONLY a JSON object with two arrays: "
@@ -35,7 +35,7 @@ def _extract_keyframe(video_path: str, at_sec: float) -> bytes | None:
 
 def tag_shot(video_path: str, shot_start: float, shot_end: float) -> tuple[list[str], list[str]]:
     """Returns (scene_tags, objects) for the shot, or ([], []) on any failure."""
-    if not config.ANTHROPIC_API_KEY:
+    if not config.llm_configured():
         return [], []
 
     frame_bytes = _extract_keyframe(video_path, (shot_start + shot_end) / 2)
@@ -43,24 +43,7 @@ def tag_shot(video_path: str, shot_start: float, shot_end: float) -> tuple[list[
         return [], []
 
     try:
-        import anthropic
-
-        client = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)
-        resp = client.messages.create(
-            model=config.ANTHROPIC_MODEL,
-            max_tokens=200,
-            messages=[{
-                "role": "user",
-                "content": [
-                    {"type": "image", "source": {
-                        "type": "base64", "media_type": "image/jpeg",
-                        "data": base64.b64encode(frame_bytes).decode(),
-                    }},
-                    {"type": "text", "text": _PROMPT},
-                ],
-            }],
-        )
-        text = resp.content[0].text
+        text = llm.complete_vision(frame_bytes, _PROMPT, max_tokens=200)
         data = json.loads(text[text.find("{"):text.rfind("}") + 1])
         return list(data.get("scene_tags", [])), list(data.get("objects", []))
     except Exception:

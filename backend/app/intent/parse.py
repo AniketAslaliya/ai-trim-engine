@@ -3,7 +3,7 @@ downstream operates on the structured Intent this produces, never on the
 original prompt string again (see intent-pipeline skill, Stage 2)."""
 import json
 
-from app import config
+from app import llm
 from app.schemas import Intent
 
 _SYSTEM = """You convert a natural-language video-editing request into a structured Intent.
@@ -30,15 +30,6 @@ Rules:
 
 
 def parse_intent(prompt: str) -> Intent:
-    import anthropic
-
-    client = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)
-    resp = client.messages.create(
-        model=config.ANTHROPIC_MODEL,
-        max_tokens=400,
-        system=_SYSTEM,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    text = resp.content[0].text
+    text = llm.complete_text(_SYSTEM, prompt, max_tokens=400)
     data = json.loads(text[text.find("{"):text.rfind("}") + 1])
     return Intent(**data)

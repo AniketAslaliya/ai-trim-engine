@@ -6,7 +6,7 @@ Stage 3). Constraints are enforced here, after filtering/ranking.
 """
 import json
 
-from app import config
+from app import config, llm
 from app.schemas import EDL, Clip, Constraints, Intent, Segment, Timeline, Transition
 
 # Predicate phrasings the intent-parser is instructed to use for simple,
@@ -44,9 +44,8 @@ Return ONLY a JSON array of segment ids that satisfy the predicate. If operation
 
 
 def _resolve_semantic(intent: Intent, segments: list[Segment]) -> list[int]:
-    if not config.ANTHROPIC_API_KEY:
+    if not config.llm_configured():
         return []
-    import anthropic
 
     compact = [
         {
@@ -56,20 +55,15 @@ def _resolve_semantic(intent: Intent, segments: list[Segment]) -> list[int]:
         }
         for s in segments
     ]
-    client = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)
-    resp = client.messages.create(
-        model=config.ANTHROPIC_MODEL,
+    text = llm.complete_text(
+        None,
+        _SEMANTIC_PROMPT.format(
+            predicate=intent.predicate,
+            operation=intent.operation,
+            segments_json=json.dumps(compact),
+        ),
         max_tokens=1000,
-        messages=[{
-            "role": "user",
-            "content": _SEMANTIC_PROMPT.format(
-                predicate=intent.predicate,
-                operation=intent.operation,
-                segments_json=json.dumps(compact),
-            ),
-        }],
     )
-    text = resp.content[0].text
     return json.loads(text[text.find("["):text.rfind("]") + 1])
 
 
