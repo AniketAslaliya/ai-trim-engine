@@ -13,4 +13,6 @@ COPY app ./app
 ENV STORAGE_DIR=/app/storage
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Railway (and most PaaS) inject $PORT at runtime and route to it; default to
+# 8000 for local `docker run` where no $PORT is set. Shell form so $PORT expands.
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
