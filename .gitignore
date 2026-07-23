@@ -13,3 +13,4 @@ build/
 *.mkv
 *.wav
 .DS_Store
+backend/storage/
