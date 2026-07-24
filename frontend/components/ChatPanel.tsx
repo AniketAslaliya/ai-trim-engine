@@ -22,6 +22,9 @@ interface Props {
   busy: boolean;
   disabled: boolean;
   onSend: (prompt: string) => void;
+  subtitle?: string;
+  samplePrompts?: string[];
+  placeholder?: string;
 }
 
 function SendIcon() {
@@ -58,7 +61,15 @@ function TypingDots() {
   );
 }
 
-export default function ChatPanel({ messages, busy, disabled, onSend }: Props) {
+export default function ChatPanel({
+  messages,
+  busy,
+  disabled,
+  onSend,
+  subtitle = "Each message applies on top of the current cut",
+  samplePrompts = SAMPLE_PROMPTS,
+  placeholder,
+}: Props) {
   const [draft, setDraft] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -90,7 +101,7 @@ export default function ChatPanel({ messages, busy, disabled, onSend }: Props) {
         </div>
         <div>
           <h2 className="text-sm font-semibold text-neutral-100">Edit assistant</h2>
-          <p className="text-[11px] text-neutral-500">Each message applies on top of the current cut</p>
+          <p className="text-[11px] text-neutral-500">{subtitle}</p>
         </div>
       </div>
 
@@ -138,7 +149,7 @@ export default function ChatPanel({ messages, busy, disabled, onSend }: Props) {
 
       <div className="border-t border-neutral-800 bg-neutral-950/60 p-3">
         <div className="mb-2 flex flex-wrap gap-1.5">
-          {SAMPLE_PROMPTS.map((p) => (
+          {samplePrompts.map((p) => (
             <button
               key={p}
               onClick={() => !disabled && onSend(p)}
@@ -161,9 +172,10 @@ export default function ChatPanel({ messages, busy, disabled, onSend }: Props) {
             }}
             disabled={disabled}
             placeholder={
-              disabled
+              placeholder ??
+              (disabled
                 ? "Upload a video first..."
-                : "e.g. Remove all the silences, pauses, and filler words like um and uh from this video."
+                : "e.g. Remove all the silences, pauses, and filler words like um and uh from this video.")
             }
             rows={2}
             className="flex-1 resize-none bg-transparent py-1.5 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none disabled:opacity-40"

@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
 from app import config
-from app.compose import compose_sequence
+from app.compose import build_manual_compose_edl, compose_sequence
 from app.edit_state import intersect_ranges, load_keep_ranges, ranges_to_edl, reset_keep_ranges, save_keep_ranges
 from app.extraction.pipeline import build_timeline
 from app.intent.parse import parse_intent
@@ -19,7 +19,7 @@ from app.jobs.store import create_job, get_job, update_job
 from app.render.ffmpeg_render import render, render_multi
 from app.resolve.manual import build_manual_edl
 from app.resolve.resolve import resolve
-from app.schemas import EDL, ComposeRequest, ManualEditRequest, Timeline
+from app.schemas import EDL, ComposeManualEditRequest, ComposeRequest, ManualEditRequest, Timeline
 
 app = FastAPI(title="AI Trim Engine")
 
@@ -216,7 +216,12 @@ async def compose_videos(req: ComposeRequest, background_tasks: BackgroundTasks)
 def _run_compose(job_id: str, video_ids: list[str], timelines: dict[str, Timeline], prompt: str) -> None:
     update_job(job_id, status="running", progress="Working out the sequence...")
     try:
-        edl = compose_sequence(prompt, timelines)
+        # Built up front (not just before render) so compose_sequence can run
+        # real frame/audio analysis at each cross-video join, not just the
+        # tag-similarity heuristic — see match_cut.py.
+        video_paths = {vid: _video_path(vid) for vid in video_ids}
+
+        edl = compose_sequence(prompt, timelines, video_paths)
         update_job(job_id, edl=edl, progress="Rendering...")
 
         # compose_sequence only resolves the sequence itself; format requests
@@ -229,7 +234,37 @@ def _run_compose(job_id: str, video_ids: list[str], timelines: dict[str, Timelin
         except Exception:
             pass  # a failed/unparseable aspect-ratio hint is not worth failing the whole render over
 
-        video_paths = {vid: _video_path(vid) for vid in video_ids}
+        output_path = str(config.compose_dir() / f"{job_id}.mp4")
+        render_multi(video_paths, edl, output_path, aspect_ratio=aspect_ratio)
+
+        update_job(job_id, status="done", progress="Done.", output_path=output_path)
+    except Exception as e:
+        print(traceback.format_exc())
+        update_job(job_id, status="failed", error=f"{e}\n\n{traceback.format_exc()}")
+
+
+@app.post("/compose/manual")
+async def compose_manual_edit(req: ComposeManualEditRequest, background_tasks: BackgroundTasks):
+    """No-LLM re-render of a compose sequence the user has manually reordered/
+    trimmed/deleted clips in via the Premiere-style compose timeline (see
+    build_manual_compose_edl) — instant and free, same as single-video
+    manual-edit, but for a cross-video sequence."""
+    if not req.clips:
+        raise HTTPException(400, "no clips provided")
+
+    video_paths = {vid: _video_path(vid) for vid in req.video_ids}
+    job = create_job(req.video_ids[0], kind="compose")
+    background_tasks.add_task(_run_compose_manual, job.job_id, video_paths, req.clips, req.aspect_ratio)
+    return {"job_id": job.job_id}
+
+
+def _run_compose_manual(job_id: str, video_paths: dict[str, str], clips_in, aspect_ratio: str | None) -> None:
+    update_job(job_id, status="running", progress="Applying manual edit...")
+    try:
+        clip_tuples = [(c.video_id, c.start, c.end) for c in clips_in]
+        edl = build_manual_compose_edl(clip_tuples, video_paths)
+        update_job(job_id, edl=edl, progress="Rendering...")
+
         output_path = str(config.compose_dir() / f"{job_id}.mp4")
         render_multi(video_paths, edl, output_path, aspect_ratio=aspect_ratio)
 

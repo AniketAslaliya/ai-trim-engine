@@ -23,9 +23,21 @@ export interface Clip {
   end: number;
 }
 
+export interface Transition {
+  at_clip_boundary: number;
+  type: "audio_fade" | "cut";
+  duration_sec: number;
+  // Only set for cross-video joins in a compose sequence — real frame/audio
+  // analysis from match_cut.py, not a tag-similarity guess.
+  visual_score: number | null;
+  visual_reason: string | null;
+  audio_delta_db: number | null;
+}
+
 export interface EDL {
   video_id: string;
   clips: Clip[];
+  transitions: Transition[];
   summary: string;
 }
 
@@ -142,6 +154,23 @@ export async function composeVideos(videoIds: string[], prompt: string): Promise
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ video_ids: videoIds, prompt }),
+  });
+  return asJson(resp);
+}
+
+/** No-LLM re-render of a manually reordered/trimmed/deleted compose timeline
+ * — the frontend sends the full final clip list, the backend just re-runs
+ * real match_cut scoring on the joins and renders. See backend/app/compose.py
+ * build_manual_compose_edl. */
+export async function composeManualEdit(
+  videoIds: string[],
+  clips: { video_id: string; start: number; end: number }[],
+  aspectRatio?: string | null
+): Promise<{ job_id: string }> {
+  const resp = await fetch(`${API_BASE}/compose/manual`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ video_ids: videoIds, clips, aspect_ratio: aspectRatio ?? null }),
   });
   return asJson(resp);
 }

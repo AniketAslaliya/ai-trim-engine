@@ -76,6 +76,13 @@ class Transition(BaseModel):
     at_clip_boundary: int
     type: Literal["audio_fade", "cut"] = "audio_fade"
     duration_sec: float = 0.03
+    # Populated only for cross-video joins in a compose sequence, from real
+    # frame/audio analysis (see match_cut.py) — structured so the frontend
+    # can show the actual score/reason on a cut marker instead of parsing it
+    # out of the free-text EDL summary.
+    visual_score: Optional[int] = None
+    visual_reason: Optional[str] = None
+    audio_delta_db: Optional[float] = None
 
 
 class EDL(BaseModel):
@@ -101,6 +108,22 @@ class ComposeRequest(BaseModel):
     natural-language description of the story/order (see compose.py)."""
     video_ids: list[str]
     prompt: str
+
+
+class ComposeClipInput(BaseModel):
+    video_id: str
+    start: float
+    end: float
+
+
+class ComposeManualEditRequest(BaseModel):
+    """The frontend's manually-edited multi-clip sequence (reordered/trimmed/
+    deleted via the Premiere-style compose timeline), sent as the full final
+    clip list in order — no LLM involved, mirrors ManualEditRequest's
+    instant/free single-video manual path but for a cross-video sequence."""
+    video_ids: list[str]
+    clips: list[ComposeClipInput]
+    aspect_ratio: Optional[str] = None
 
 
 class JobStatus(BaseModel):

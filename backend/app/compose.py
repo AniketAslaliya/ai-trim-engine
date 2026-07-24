@@ -3,19 +3,20 @@ videos into one sequence, per a natural-language description of the desired
 story/order — the "phase 2" cinematic capability on top of single-video
 trimming.
 
-Honest scope (see PRD): this does NOT implement true frame-level match-cut
-detection (optical flow / pose / composition matching across shots) — that's
-a real, unproven-in-scope CV problem. What this DOES do: feed the LLM every
-candidate segment's visual tags (scene_tags/objects/action_tags, the same
-ones the single-video pipeline already extracts) alongside the sequencing
-instruction, explicitly ask it to prefer cutting between segments whose tags
-resemble each other at cross-video join points, and report a computed tag-
-overlap score for each cross-video cut so the "match" is inspectable, not a
-black-box claim.
+Honest scope (see PRD): still not full frame-level CV match-cut detection
+(optical flow / pose-tracking / motion-vector matching across shots) — that
+remains a real, unproven-in-scope CV problem. What this DOES do at each
+cross-video join: the LLM sees every candidate segment's visual tags to bias
+sequencing toward tag-similar joins (cheap, always available, guides *which*
+sequence gets picked), and separately — once a sequence is chosen — actually
+extracts the two real boundary frames and asks a vision LLM to judge visual
+continuity between them, plus measures real audio-level continuity via
+ffmpeg (see match_cut.py). That second part is genuine frame/audio analysis,
+not a tag proxy; it's reported per join so the "match" is inspectable.
 """
 import json
 
-from app import config, llm
+from app import config, llm, match_cut
 from app.schemas import EDL, Clip, Segment, Timeline, Transition
 
 _COMPOSE_PROMPT = """You are combining segments from MULTIPLE videos into one sequence, per the user's description of the story/order they want.
@@ -62,7 +63,7 @@ def _tag_overlap(a: Segment, b: Segment) -> int:
     return len(a_tags & b_tags)
 
 
-def compose_sequence(prompt: str, timelines: dict[str, Timeline]) -> EDL:
+def compose_sequence(prompt: str, timelines: dict[str, Timeline], video_paths: dict[str, str] | None = None) -> EDL:
     if not config.llm_configured():
         raise ValueError(
             "Combining multiple videos requires an LLM call to work out the sequence/story order — "
@@ -109,10 +110,24 @@ def compose_sequence(prompt: str, timelines: dict[str, Timeline]) -> EDL:
         if seg is None:
             continue  # LLM referenced something that doesn't exist — skip rather than fail the whole compose
         clips.append(Clip(video_id=vid, segment_ids=[seg.id], start=seg.start, end=seg.end))
-        transitions.append(Transition(at_clip_boundary=len(clips) - 1, type="audio_fade", duration_sec=0.03))
+        transition = Transition(at_clip_boundary=len(clips) - 1, type="audio_fade", duration_sec=0.03)
+        transitions.append(transition)
         if prev_seg is not None and prev_vid != vid:
-            overlap = _tag_overlap(prev_seg, seg)
-            match_notes.append(f"{prev_vid[:8]}→{vid[:8]} (tag match: {overlap})")
+            note = f"{prev_vid[:8]}→{vid[:8]}"
+            score = None
+            if video_paths and prev_vid in video_paths and vid in video_paths:
+                score = match_cut.score_join(video_paths[prev_vid], prev_seg.end, video_paths[vid], seg.start)
+            if score and score["visual_score"] is not None:
+                transition.visual_score = score["visual_score"]
+                transition.visual_reason = score["visual_reason"]
+                transition.audio_delta_db = score["audio_delta_db"]
+                note += f" (visual {score['visual_score']}/10"
+                if score["audio_delta_db"] is not None:
+                    note += f", audio Δ{score['audio_delta_db']}dB"
+                note += f": {score['visual_reason']})"
+            else:
+                note += f" (tag match: {_tag_overlap(prev_seg, seg)})"
+            match_notes.append(note)
         prev_seg, prev_vid = seg, vid
 
     if not clips:
@@ -124,4 +139,45 @@ def compose_sequence(prompt: str, timelines: dict[str, Timeline]) -> EDL:
         f"Combined {len(timelines)} video(s) into {len(clips)} clip(s), {total:.1f}s total. "
         f"Cross-video joins: {match_summary}."
     )
+    return EDL(video_id="multi", clips=clips, transitions=transitions, summary=summary)
+
+
+def build_manual_compose_edl(clips_in: list[tuple[str, float, float]], video_paths: dict[str, str]) -> EDL:
+    """No-LLM path for the Premiere-style compose timeline: the frontend sends
+    the full, already-decided (video_id, start, end) clip list in final
+    order — reordering/trimming/deleting clips is a pure frontend timeline
+    interaction, not something that needs re-asking the LLM. Still runs real
+    match_cut scoring on every cross-video join so manual edits get the same
+    genuine visual/audio continuity feedback as the auto-composed sequence.
+    """
+    if not clips_in:
+        raise ValueError("No clips in the sequence — nothing to render.")
+
+    clips: list[Clip] = []
+    transitions: list[Transition] = []
+    match_notes: list[str] = []
+    prev_vid: str | None = None
+    prev_end: float | None = None
+
+    for vid, start, end in clips_in:
+        clips.append(Clip(video_id=vid, segment_ids=[], start=start, end=end))
+        transition = Transition(at_clip_boundary=len(clips) - 1, type="audio_fade", duration_sec=0.03)
+        transitions.append(transition)
+        if prev_vid is not None and prev_vid != vid and prev_vid in video_paths and vid in video_paths:
+            score = match_cut.score_join(video_paths[prev_vid], prev_end, video_paths[vid], start)
+            note = f"{prev_vid[:8]}→{vid[:8]}"
+            if score["visual_score"] is not None:
+                transition.visual_score = score["visual_score"]
+                transition.visual_reason = score["visual_reason"]
+                transition.audio_delta_db = score["audio_delta_db"]
+                note += f" (visual {score['visual_score']}/10"
+                if score["audio_delta_db"] is not None:
+                    note += f", audio Δ{score['audio_delta_db']}dB"
+                note += f": {score['visual_reason']})"
+            match_notes.append(note)
+        prev_vid, prev_end = vid, end
+
+    total = sum(c.end - c.start for c in clips)
+    match_summary = "; ".join(match_notes) if match_notes else "single video, no cross-video joins"
+    summary = f"Manually edited to {len(clips)} clip(s), {total:.1f}s total. Cross-video joins: {match_summary}."
     return EDL(video_id="multi", clips=clips, transitions=transitions, summary=summary)

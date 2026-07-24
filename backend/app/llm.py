@@ -41,6 +41,15 @@ def complete_vision_json(image_bytes: bytes, prompt: str, schema: dict, max_toke
     return _anthropic_vision_json(image_bytes, prompt, schema, max_tokens)
 
 
+def complete_multi_vision_json(images: list[bytes], prompt: str, schema: dict, max_tokens: int = 300):
+    """Like complete_vision_json but with several images in one call — used
+    to directly compare two specific frames (e.g. a match-cut boundary) in
+    one shot, rather than describing each in isolation."""
+    if config.LLM_PROVIDER == "gemini":
+        return _gemini_multi_vision_json(images, prompt, schema, max_tokens)
+    return _anthropic_multi_vision_json(images, prompt, schema, max_tokens)
+
+
 def _gemini_client():
     from google import genai
 
@@ -103,6 +112,21 @@ def _gemini_vision_json(image_bytes: bytes, prompt: str, schema: dict, max_token
 
     resp = _gemini_generate(
         [types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg"), prompt],
+        {
+            "max_output_tokens": max_tokens,
+            "response_mime_type": "application/json",
+            "response_json_schema": schema,
+        },
+    )
+    return json.loads(resp.text)
+
+
+def _gemini_multi_vision_json(images: list[bytes], prompt: str, schema: dict, max_tokens: int):
+    from google.genai import types
+
+    parts = [types.Part.from_bytes(data=img, mime_type="image/jpeg") for img in images]
+    resp = _gemini_generate(
+        [*parts, prompt],
         {
             "max_output_tokens": max_tokens,
             "response_mime_type": "application/json",
@@ -192,6 +216,29 @@ def _anthropic_vision_json(image_bytes: bytes, prompt: str, schema: dict, max_to
                 {"type": "text", "text": prompt},
             ],
         }],
+        tools=[{"name": "emit_result", "description": "Emit the structured result.", "input_schema": schema}],
+        tool_choice={"type": "tool", "name": "emit_result"},
+    )
+    for block in resp.content:
+        if block.type == "tool_use":
+            return block.input
+    raise ValueError("Anthropic response had no tool_use block")
+
+
+def _anthropic_multi_vision_json(images: list[bytes], prompt: str, schema: dict, max_tokens: int):
+    import base64
+
+    import anthropic
+
+    client = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)
+    image_blocks = [
+        {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": base64.b64encode(img).decode()}}
+        for img in images
+    ]
+    resp = client.messages.create(
+        model=config.ANTHROPIC_MODEL,
+        max_tokens=max_tokens,
+        messages=[{"role": "user", "content": [*image_blocks, {"type": "text", "text": prompt}]}],
         tools=[{"name": "emit_result", "description": "Emit the structured result.", "input_schema": schema}],
         tool_choice={"type": "tool", "name": "emit_result"},
     )
