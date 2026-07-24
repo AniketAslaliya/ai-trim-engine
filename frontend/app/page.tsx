@@ -1,186 +1,142 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { EDL, Intent, JobStatus, outputUrl, pollJob, submitEdit, uploadVideo } from "@/lib/api";
+import {
+  Timeline,
+  getTimeline,
+  outputUrl,
+  pollJob,
+  submitEdit,
+  uploadVideo,
+} from "@/lib/api";
+import ChatPanel, { ChatMessage } from "@/components/ChatPanel";
+import VideoTimeline from "@/components/VideoTimeline";
 
-// Subset of .claude/skills/eval-harness/SKILL.md's 20 sample prompts, spanning
-// the deterministic and semantic categories, as one-click starting points.
-const SAMPLE_PROMPTS = [
-  "Remove pauses and silences.",
-  "Remove filler words (um, uh, hmm).",
-  "Keep only outdoor scenes.",
-  "Remove all laughing.",
-  "Keep only questions.",
-  "Make this under 30 seconds.",
-];
-
-type Stage = "idle" | "uploading" | "extracting" | "ready" | "editing" | "done" | "error";
+type Stage = "idle" | "uploading" | "extracting" | "ready" | "editing" | "error";
 
 export default function Home() {
   const [stage, setStage] = useState<Stage>("idle");
   const [videoId, setVideoId] = useState<string | null>(null);
-  const [sourcePreviewUrl, setSourcePreviewUrl] = useState<string | null>(null);
-  const [prompt, setPrompt] = useState("");
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [timeline, setTimeline] = useState<Timeline | null>(null);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [statusText, setStatusText] = useState("");
-  const [errorText, setErrorText] = useState<string | null>(null);
-  const [intent, setIntent] = useState<Intent | null>(null);
-  const [edl, setEdl] = useState<EDL | null>(null);
-  const [resultUrl, setResultUrl] = useState<string | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const busy = stage === "uploading" || stage === "extracting" || stage === "editing";
 
   async function handleFileChosen(file: File) {
-    setErrorText(null);
-    setSourcePreviewUrl(URL.createObjectURL(file));
+    setPreviewUrl(URL.createObjectURL(file));
+    setTimeline(null);
+    setMessages([]);
     setStage("uploading");
     setStatusText("Uploading...");
     try {
       const { video_id, job_id } = await uploadVideo(file);
       setVideoId(video_id);
       setStage("extracting");
-      setStatusText("Extracting (transcribing, detecting scenes/silence)...");
+      setStatusText("Extracting (transcript, scenes, silence)...");
       const job = await pollJob(job_id, (j) => setStatusText(`Extraction: ${j.status}`));
       if (job.status === "failed") {
-        setErrorText(job.error || "Extraction failed.");
+        setMessages([{ role: "error", text: job.error || "Extraction failed." }]);
         setStage("error");
         return;
       }
+      const tl = await getTimeline(video_id);
+      setTimeline(tl);
       setStage("ready");
-      setStatusText("Ready — describe the edit you want.");
+      setStatusText("");
     } catch (e) {
-      setErrorText(String(e));
+      setMessages([{ role: "error", text: String(e) }]);
       setStage("error");
     }
   }
 
-  async function handleSubmitPrompt() {
-    if (!videoId || !prompt.trim()) return;
-    setErrorText(null);
-    setIntent(null);
-    setEdl(null);
-    setResultUrl(null);
+  async function handleSend(prompt: string) {
+    if (!videoId) return;
+    setMessages((m) => [...m, { role: "user", text: prompt }]);
     setStage("editing");
-    setStatusText("Parsing intent...");
     try {
-      const { job_id } = await submitEdit(videoId, prompt.trim());
-      const job = await pollJob(job_id, (j: JobStatus) => {
-        if (j.intent) setIntent(j.intent);
-        setStatusText(`Edit: ${j.status}`);
-      });
+      const { job_id } = await submitEdit(videoId, prompt);
+      const job = await pollJob(job_id, (j) => setStatusText(`Edit: ${j.status}`));
       if (job.status === "failed") {
-        setErrorText(job.error || "Edit failed.");
-        setStage("error");
+        setMessages((m) => [...m, { role: "error", text: job.error || "Edit failed." }]);
+        setStage("ready");
         return;
       }
-      setIntent(job.intent);
-      setEdl(job.edl);
-      setResultUrl(outputUrl(job.job_id));
-      setStage("done");
-      setStatusText("Done.");
+      setPreviewUrl(outputUrl(job.job_id));
+      setMessages((m) => [
+        ...m,
+        { role: "assistant", text: job.edl?.summary || "Edit applied." },
+      ]);
+      setStage("ready");
+      setStatusText("");
     } catch (e) {
-      setErrorText(String(e));
-      setStage("error");
+      setMessages((m) => [...m, { role: "error", text: String(e) }]);
+      setStage("ready");
     }
   }
 
-  const busy = stage === "uploading" || stage === "extracting" || stage === "editing";
+  function handleSeek(t: number) {
+    if (videoRef.current) videoRef.current.currentTime = t;
+  }
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10 font-sans">
-      <h1 className="text-2xl font-semibold">AI Trim Engine</h1>
-      <p className="mt-1 text-sm text-neutral-500">
-        Upload a video, describe the edit in plain language, get a trimmed cut.
-      </p>
-
-      <section className="mt-8">
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="video/*"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) handleFileChosen(f);
-          }}
-        />
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={busy}
-          className="rounded-md bg-black px-4 py-2 text-white disabled:opacity-40"
-        >
-          {videoId ? "Upload a different video" : "Upload video"}
-        </button>
-
-        {sourcePreviewUrl && (
-          <video src={sourcePreviewUrl} controls className="mt-4 w-full rounded-md border" />
-        )}
-      </section>
-
-      {statusText && (
-        <p className="mt-4 text-sm text-neutral-600">
-          {busy && <span className="mr-2 inline-block animate-pulse">●</span>}
-          {statusText}
-        </p>
-      )}
-
-      {errorText && (
-        <pre className="mt-4 whitespace-pre-wrap rounded-md bg-red-50 p-3 text-sm text-red-700">
-          {errorText}
-        </pre>
-      )}
-
-      {(stage === "ready" || stage === "editing" || stage === "done" || (stage === "error" && videoId)) && (
-        <section className="mt-8">
-          <label className="block text-sm font-medium">What edit do you want?</label>
-          <textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="e.g. remove pauses and silences"
-            className="mt-2 w-full rounded-md border p-3 text-sm"
-            rows={2}
+    <div className="flex h-screen flex-col bg-neutral-950 text-neutral-100">
+      <header className="flex items-center justify-between border-b border-neutral-800 px-4 py-2.5">
+        <div>
+          <h1 className="text-sm font-semibold">AI Trim Engine</h1>
+          {statusText && <p className="text-xs text-neutral-500">{statusText}</p>}
+        </div>
+        <div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="video/*"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handleFileChosen(f);
+            }}
           />
-          <div className="mt-2 flex flex-wrap gap-2">
-            {SAMPLE_PROMPTS.map((p) => (
-              <button
-                key={p}
-                onClick={() => setPrompt(p)}
-                className="rounded-full border px-3 py-1 text-xs text-neutral-600 hover:bg-neutral-100"
-              >
-                {p}
-              </button>
-            ))}
-          </div>
           <button
-            onClick={handleSubmitPrompt}
-            disabled={busy || !prompt.trim()}
-            className="mt-3 rounded-md bg-black px-4 py-2 text-white disabled:opacity-40"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={busy}
+            className="rounded-md bg-neutral-800 px-3 py-1.5 text-xs font-medium hover:bg-neutral-700 disabled:opacity-40"
           >
-            Run edit
+            {videoId ? "Upload different video" : "Upload video"}
           </button>
-        </section>
-      )}
+        </div>
+      </header>
 
-      {intent && (
-        <section className="mt-8">
-          <h2 className="text-sm font-semibold text-neutral-700">Parsed intent</h2>
-          <pre className="mt-2 overflow-x-auto rounded-md bg-neutral-50 p-3 text-xs">
-            {JSON.stringify(intent, null, 2)}
-          </pre>
-        </section>
-      )}
+      <div className="flex flex-1 overflow-hidden">
+        <main className="flex flex-1 flex-col overflow-y-auto p-4">
+          <div className="flex flex-1 items-center justify-center rounded-lg bg-black">
+            {previewUrl ? (
+              <video
+                ref={videoRef}
+                src={previewUrl}
+                controls
+                onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+                className="max-h-[65vh] w-full rounded-lg"
+              />
+            ) : (
+              <p className="text-sm text-neutral-500">Upload a video to preview it here.</p>
+            )}
+          </div>
 
-      {edl && (
-        <section className="mt-4">
-          <h2 className="text-sm font-semibold text-neutral-700">Edit summary</h2>
-          <p className="mt-2 text-sm text-neutral-600">{edl.summary}</p>
-        </section>
-      )}
+          {timeline && (
+            <VideoTimeline timeline={timeline} currentTime={currentTime} onSeek={handleSeek} />
+          )}
+        </main>
 
-      {resultUrl && (
-        <section className="mt-6">
-          <h2 className="text-sm font-semibold text-neutral-700">Result</h2>
-          <video src={resultUrl} controls className="mt-2 w-full rounded-md border" />
-        </section>
-      )}
-    </main>
+        <div className="w-[340px] shrink-0">
+          <ChatPanel messages={messages} busy={busy} disabled={!videoId || stage === "extracting" || stage === "uploading"} onSend={handleSend} />
+        </div>
+      </div>
+    </div>
   );
 }

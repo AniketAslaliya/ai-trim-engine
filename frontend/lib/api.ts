@@ -39,6 +39,24 @@ export interface JobStatus {
   output_path: string | null;
 }
 
+export interface Segment {
+  id: number;
+  start: number;
+  end: number;
+  transcript: string;
+  is_silence: boolean;
+  shot_boundary: boolean;
+  scene_tags: string[];
+  objects: string[];
+  filler_words: unknown[];
+}
+
+export interface Timeline {
+  video_id: string;
+  duration_sec: number;
+  segments: Segment[];
+}
+
 async function asJson<T>(resp: Response): Promise<T> {
   if (!resp.ok) {
     const body = await resp.text();
@@ -64,6 +82,11 @@ export async function submitEdit(videoId: string, prompt: string): Promise<{ job
     `${API_BASE}/videos/${videoId}/edit?prompt=${encodeURIComponent(prompt)}`,
     { method: "POST" }
   );
+  return asJson(resp);
+}
+
+export async function getTimeline(videoId: string): Promise<Timeline> {
+  const resp = await fetch(`${API_BASE}/videos/${videoId}/timeline`);
   return asJson(resp);
 }
 
