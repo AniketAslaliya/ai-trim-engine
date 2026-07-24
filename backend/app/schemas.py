@@ -70,6 +70,17 @@ class EDL(BaseModel):
     summary: str = ""
 
 
+class TimeRange(BaseModel):
+    start: float
+    end: float
+
+
+class ManualEditRequest(BaseModel):
+    """A user-drawn selection to cut, straight from the timeline UI — no LLM
+    involved, so this path is instant and free (see resolve/manual.py)."""
+    remove_ranges: list[TimeRange]
+
+
 class JobStatus(BaseModel):
     job_id: str
     video_id: str

@@ -85,6 +85,26 @@ export async function submitEdit(videoId: string, prompt: string): Promise<{ job
   return asJson(resp);
 }
 
+export async function retryExtraction(videoId: string): Promise<{ job_id: string }> {
+  const resp = await fetch(`${API_BASE}/videos/${videoId}/retry-extraction`, { method: "POST" });
+  return asJson(resp);
+}
+
+/** Manual trim: a user-drawn timeline selection, cut with no LLM call at all
+ * (pure time-range math on the backend) — instant and free compared to a
+ * chat prompt going through intent parsing. */
+export async function manualEdit(
+  videoId: string,
+  removeRanges: { start: number; end: number }[]
+): Promise<{ job_id: string }> {
+  const resp = await fetch(`${API_BASE}/videos/${videoId}/manual-edit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ remove_ranges: removeRanges }),
+  });
+  return asJson(resp);
+}
+
 export async function getTimeline(videoId: string): Promise<Timeline> {
   const resp = await fetch(`${API_BASE}/videos/${videoId}/timeline`);
   return asJson(resp);

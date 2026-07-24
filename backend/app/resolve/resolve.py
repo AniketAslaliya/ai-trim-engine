@@ -7,7 +7,8 @@ Stage 3). Constraints are enforced here, after filtering/ranking.
 import json
 
 from app import config, llm
-from app.schemas import EDL, Clip, Constraints, Intent, Segment, Timeline, Transition
+from app.resolve.manual import build_manual_edl
+from app.schemas import EDL, Clip, Constraints, Intent, Segment, Timeline, TimeRange, Transition
 
 # Fields resolvable by direct boolean check on the Timeline — zero LLM calls.
 # Routed on Intent.target_signal (structured), never on predicate wording —
@@ -17,6 +18,27 @@ _BOOLEAN_SIGNALS = {
     "is_silence": lambda seg: seg.is_silence,
     "filler_words": lambda seg: len(seg.filler_words) > 0,
 }
+
+# Padding around each filler word's exact timestamp so the cut doesn't clip
+# the tail of the word before it or the head of the word after it.
+_FILLER_PAD_SEC = 0.08
+
+
+def _filler_word_ranges(segments: list[Segment]) -> list[TimeRange]:
+    """Exact per-word cut ranges, not whole segments. A segment's transcript
+    ("so today we're gonna, um, talk about") is several seconds long and
+    mostly real speech — removing filler_words at segment granularity would
+    delete all of it just because one "um" is inside it. Segments already
+    carry word-level timestamps for exactly this reason (see
+    .claude/skills/timeline-schema); use them."""
+    ranges = []
+    for seg in segments:
+        for w in seg.filler_words:
+            ranges.append(TimeRange(
+                start=max(w.start - _FILLER_PAD_SEC, seg.start),
+                end=min(w.end + _FILLER_PAD_SEC, seg.end),
+            ))
+    return ranges
 
 
 def _try_deterministic(intent: Intent, segments: list[Segment]) -> set[int] | None:
@@ -45,9 +67,18 @@ Operation: {operation}
 Segments (id, transcript, scene_tags, objects, audio_events, is_silence, has_filler_words):
 {segments_json}
 
-Return ONLY a JSON array of segment ids that satisfy the predicate. If operation is
-"rank_select", return the array ordered best-match first instead. No commentary.
+Return the segment ids that satisfy the predicate. If operation is "rank_select",
+order the ids best-match first instead.
 """
+
+# Wrapped in an object (not a bare array) because Anthropic's tool input_schema
+# requires an object at the root — keeping one schema shape for both providers
+# avoids provider-specific branching here.
+_SEMANTIC_RESULT_SCHEMA = {
+    "type": "object",
+    "properties": {"segment_ids": {"type": "array", "items": {"type": "integer"}}},
+    "required": ["segment_ids"],
+}
 
 
 def _resolve_semantic(intent: Intent, segments: list[Segment]) -> list[int]:
@@ -63,16 +94,17 @@ def _resolve_semantic(intent: Intent, segments: list[Segment]) -> list[int]:
         }
         for s in segments
     ]
-    text = llm.complete_text(
+    data = llm.complete_json(
         None,
         _SEMANTIC_PROMPT.format(
             predicate=intent.predicate,
             operation=intent.operation,
             segments_json=json.dumps(compact),
         ),
+        _SEMANTIC_RESULT_SCHEMA,
         max_tokens=1000,
     )
-    return json.loads(text[text.find("["):text.rfind("]") + 1])
+    return data["segment_ids"]
 
 
 def _apply_constraints(kept_ids: list[int], ranked_ids: list[int], segments: list[Segment], constraints: Constraints) -> list[int]:
@@ -106,6 +138,18 @@ def _segments_to_clips(kept_ids: set[int], segments: list[Segment]) -> list[Clip
 
 def resolve(intent: Intent, timeline: Timeline) -> EDL:
     segments = timeline.segments
+
+    if intent.operation == "filter" and intent.mode == "remove" and set(intent.target_signal) == {"filler_words"}:
+        ranges = _filler_word_ranges(segments)
+        if not ranges:
+            return EDL(
+                video_id=timeline.video_id,
+                clips=[Clip(segment_ids=[s.id for s in segments], start=0.0, end=timeline.duration_sec)],
+                summary="No filler words detected — nothing to remove.",
+            )
+        edl = build_manual_edl(timeline, ranges)
+        edl.summary = f"Removed {len(ranges)} filler word(s). {edl.summary}"
+        return edl
 
     if intent.operation == "constrain_only":
         matched_ids = [s.id for s in segments]

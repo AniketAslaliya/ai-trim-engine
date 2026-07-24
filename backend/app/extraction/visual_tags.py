@@ -5,7 +5,6 @@ scene/object tags as JSON. Degrades to empty tags on any failure — extraction
 must never crash because tagging failed (see intent-pipeline skill: "degrade
 gracefully").
 """
-import json
 import subprocess
 import tempfile
 from pathlib import Path
@@ -13,11 +12,20 @@ from pathlib import Path
 from app import config, llm
 
 _PROMPT = (
-    "Look at this video frame. Return ONLY a JSON object with two arrays: "
+    "Look at this video frame. Identify: "
     '"scene_tags" (location/setting descriptors, e.g. "office", "outdoor", "indoor") '
     'and "objects" (visible objects relevant to editing decisions, e.g. "laptop", "phone", "whiteboard", "product"). '
-    "Keep each array short (max 5 items). No commentary, JSON only."
+    "Keep each array short (max 5 items)."
 )
+
+_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "scene_tags": {"type": "array", "items": {"type": "string"}},
+        "objects": {"type": "array", "items": {"type": "string"}},
+    },
+    "required": ["scene_tags", "objects"],
+}
 
 
 def _extract_keyframe(video_path: str, at_sec: float) -> bytes | None:
@@ -43,8 +51,7 @@ def tag_shot(video_path: str, shot_start: float, shot_end: float) -> tuple[list[
         return [], []
 
     try:
-        text = llm.complete_vision(frame_bytes, _PROMPT, max_tokens=200)
-        data = json.loads(text[text.find("{"):text.rfind("}") + 1])
+        data = llm.complete_vision_json(frame_bytes, _PROMPT, _SCHEMA, max_tokens=200)
         return list(data.get("scene_tags", [])), list(data.get("objects", []))
     except Exception:
         # Never let a tagging failure take down extraction — empty tags are valid.
