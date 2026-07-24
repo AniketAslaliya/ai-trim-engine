@@ -96,3 +96,79 @@ def render(video_path: str, edl: EDL, output_path: str, aspect_ratio: Optional[s
         proc = subprocess.run(cmd, capture_output=True, text=True)
         if proc.returncode != 0:
             raise RuntimeError(f"ffmpeg concat failed: {proc.stderr[-500:]}")
+
+
+# Fixed canvas presets for aspect-ratio requests during compose — predictable
+# output size regardless of what any individual source video's resolution is.
+_CANVAS_FOR_RATIO = {
+    "9:16": (720, 1280),
+    "16:9": (1280, 720),
+    "1:1": (1080, 1080),
+    "4:5": (864, 1080),
+}
+_TARGET_FPS = 30
+
+
+def render_multi(video_paths: dict[str, str], edl: EDL, output_path: str, aspect_ratio: Optional[str] = None) -> None:
+    """Same idea as render(), but each clip can come from a DIFFERENT source
+    file (see compose.py) — the real difference is that source videos can
+    disagree on resolution/fps/audio format, and ffmpeg's concat demuxer
+    requires every part to match exactly for the final -c copy step to work.
+    Every clip gets scaled/padded (or cropped, if an aspect ratio was
+    requested) to one common canvas and a common fps/audio format first.
+    """
+    if not edl.clips:
+        raise ValueError("EDL has no clips — nothing to render.")
+
+    if aspect_ratio and aspect_ratio in _CANVAS_FOR_RATIO:
+        canvas_w, canvas_h = _CANVAS_FOR_RATIO[aspect_ratio]
+        fit_mode = "fill"  # crop to fill the requested shape, matches single-video render's crop behavior
+    else:
+        first_path = video_paths[edl.clips[0].video_id]
+        canvas_w, canvas_h = _get_resolution(first_path) or (1280, 720)
+        fit_mode = "pad"  # preserve full frame by letterboxing, since no reformat was actually requested
+
+    if fit_mode == "fill":
+        scale_vf = f"scale={canvas_w}:{canvas_h}:force_original_aspect_ratio=increase,crop={canvas_w}:{canvas_h}"
+    else:
+        scale_vf = (
+            f"scale={canvas_w}:{canvas_h}:force_original_aspect_ratio=decrease,"
+            f"pad={canvas_w}:{canvas_h}:(ow-iw)/2:(oh-ih)/2:color=black"
+        )
+    vf = f"{scale_vf},setsar=1,fps={_TARGET_FPS}"
+
+    with tempfile.TemporaryDirectory() as tmp:
+        part_paths = []
+        for i, clip in enumerate(edl.clips):
+            if clip.video_id not in video_paths:
+                raise ValueError(f"Clip {i} references video_id {clip.video_id!r}, which wasn't provided.")
+            part = Path(tmp) / f"part_{i:04d}.mp4"
+            duration = clip.end - clip.start
+            cmd = [
+                "ffmpeg", "-y", "-ss", str(clip.start), "-i", video_paths[clip.video_id],
+                "-t", str(duration),
+                "-af", (
+                    f"afade=t=in:st=0:d={_FADE_SEC},"
+                    f"afade=t=out:st={max(duration - _FADE_SEC, 0)}:d={_FADE_SEC}"
+                ),
+                "-vf", vf,
+                "-r", str(_TARGET_FPS),
+                "-c:v", "libx264", "-c:a", "aac", "-ar", "44100", "-ac", "2",
+                "-avoid_negative_ts", "make_zero",
+                str(part),
+            ]
+            proc = subprocess.run(cmd, capture_output=True, text=True)
+            if proc.returncode != 0:
+                raise RuntimeError(f"ffmpeg failed on clip {i} (video_id={clip.video_id}): {proc.stderr[-500:]}")
+            part_paths.append(part)
+
+        concat_list = Path(tmp) / "concat.txt"
+        concat_list.write_text("\n".join(f"file '{p.as_posix()}'" for p in part_paths))
+
+        cmd = [
+            "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(concat_list),
+            "-c", "copy", output_path,
+        ]
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+        if proc.returncode != 0:
+            raise RuntimeError(f"ffmpeg concat failed: {proc.stderr[-500:]}")

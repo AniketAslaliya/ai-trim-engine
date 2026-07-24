@@ -58,7 +58,7 @@ def intersect_ranges(a: list[tuple[float, float]], b: list[tuple[float, float]])
 
 
 def ranges_to_edl(video_id: str, keep_ranges: list[tuple[float, float]], summary: str) -> EDL:
-    clips = [Clip(segment_ids=[], start=s, end=e) for s, e in keep_ranges]
+    clips = [Clip(video_id=video_id, segment_ids=[], start=s, end=e) for s, e in keep_ranges]
     transitions = [
         Transition(at_clip_boundary=i, type="audio_fade", duration_sec=0.03)
         for i in range(len(clips))

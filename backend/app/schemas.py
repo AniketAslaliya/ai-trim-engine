@@ -61,6 +61,12 @@ class Intent(BaseModel):
 
 
 class Clip(BaseModel):
+    # Which source video this clip's start/end refer to. Optional/defaulted
+    # for backward compatibility with the single-video EDLs that predate
+    # multi-video compose — those all come from one video anyway, so callers
+    # now stamp timeline.video_id on every Clip they build (see resolve.py,
+    # resolve/manual.py, edit_state.py) rather than leaving it unset.
+    video_id: Optional[str] = None
     segment_ids: list[int]
     start: float
     end: float
@@ -90,10 +96,17 @@ class ManualEditRequest(BaseModel):
     remove_ranges: list[TimeRange]
 
 
+class ComposeRequest(BaseModel):
+    """Combine multiple already-extracted videos into one sequence, per a
+    natural-language description of the story/order (see compose.py)."""
+    video_ids: list[str]
+    prompt: str
+
+
 class JobStatus(BaseModel):
     job_id: str
     video_id: str
-    kind: Literal["extraction", "edit"]
+    kind: Literal["extraction", "edit", "compose"]
     status: Literal["pending", "running", "done", "failed"]
     progress: Optional[str] = None
     error: Optional[str] = None

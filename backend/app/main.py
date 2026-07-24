@@ -11,14 +11,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
 from app import config
+from app.compose import compose_sequence
 from app.edit_state import intersect_ranges, load_keep_ranges, ranges_to_edl, reset_keep_ranges, save_keep_ranges
 from app.extraction.pipeline import build_timeline
 from app.intent.parse import parse_intent
 from app.jobs.store import create_job, get_job, update_job
-from app.render.ffmpeg_render import render
+from app.render.ffmpeg_render import render, render_multi
 from app.resolve.manual import build_manual_edl
 from app.resolve.resolve import resolve
-from app.schemas import EDL, ManualEditRequest, Timeline
+from app.schemas import EDL, ComposeRequest, ManualEditRequest, Timeline
 
 app = FastAPI(title="AI Trim Engine")
 
@@ -187,6 +188,52 @@ def _run_manual_edit(job_id: str, video_id: str, timeline: Timeline, req: Manual
         render(_video_path(video_id), edl, output_path)
 
         update_job(job_id, status="done", output_path=output_path)
+    except Exception as e:
+        print(traceback.format_exc())
+        update_job(job_id, status="failed", error=f"{e}\n\n{traceback.format_exc()}")
+
+
+@app.post("/compose")
+async def compose_videos(req: ComposeRequest, background_tasks: BackgroundTasks):
+    """Combine several already-extracted videos into one sequence, per a
+    natural-language description of the desired story/order (compose.py)."""
+    if len(req.video_ids) < 2:
+        raise HTTPException(400, "compose needs at least 2 video_ids")
+
+    timelines: dict[str, Timeline] = {}
+    for vid in req.video_ids:
+        try:
+            with open(_timeline_path(vid)) as f:
+                timelines[vid] = Timeline(**json.load(f))
+        except FileNotFoundError:
+            raise HTTPException(404, f"timeline not ready for video_id {vid} — run extraction first")
+
+    job = create_job(req.video_ids[0], kind="compose")
+    background_tasks.add_task(_run_compose, job.job_id, req.video_ids, timelines, req.prompt)
+    return {"job_id": job.job_id}
+
+
+def _run_compose(job_id: str, video_ids: list[str], timelines: dict[str, Timeline], prompt: str) -> None:
+    update_job(job_id, status="running", progress="Working out the sequence...")
+    try:
+        edl = compose_sequence(prompt, timelines)
+        update_job(job_id, edl=edl, progress="Rendering...")
+
+        # compose_sequence only resolves the sequence itself; format requests
+        # ("...for Instagram Reels") live in the same free-text prompt, so
+        # reuse the existing intent parser just to harvest that constraint —
+        # same mechanism single-video edits already use, not new logic.
+        aspect_ratio = None
+        try:
+            aspect_ratio = parse_intent(prompt).constraints.aspect_ratio
+        except Exception:
+            pass  # a failed/unparseable aspect-ratio hint is not worth failing the whole render over
+
+        video_paths = {vid: _video_path(vid) for vid in video_ids}
+        output_path = str(config.compose_dir() / f"{job_id}.mp4")
+        render_multi(video_paths, edl, output_path, aspect_ratio=aspect_ratio)
+
+        update_job(job_id, status="done", progress="Done.", output_path=output_path)
     except Exception as e:
         print(traceback.format_exc())
         update_job(job_id, status="failed", error=f"{e}\n\n{traceback.format_exc()}")

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState } from "react";
 import {
   KeepRange,
@@ -258,7 +259,12 @@ export default function Home() {
   return (
     <div className="flex h-screen flex-col bg-neutral-950 text-neutral-100">
       <header className="flex items-center justify-between border-b border-neutral-800 px-4 py-2.5">
-        <h1 className="text-sm font-semibold">AI Trim Engine</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-sm font-semibold">AI Trim Engine</h1>
+          <Link href="/combine" className="text-xs text-neutral-500 hover:text-neutral-300">
+            Combine videos →
+          </Link>
+        </div>
         <div>
           <input
             ref={fileInputRef}

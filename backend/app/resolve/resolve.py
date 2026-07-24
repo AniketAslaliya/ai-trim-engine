@@ -165,25 +165,25 @@ def _apply_constraints(kept_ids: list[int], ranked_ids: list[int], segments: lis
     return sorted(result)
 
 
-def _segments_to_clips(kept_ids: set[int], segments: list[Segment]) -> list[Clip]:
+def _segments_to_clips(video_id: str, kept_ids: set[int], segments: list[Segment]) -> list[Clip]:
     """Merges contiguous kept segments into clips to avoid a cut per segment."""
     ordered = sorted((s for s in segments if s.id in kept_ids), key=lambda s: s.start)
     clips: list[Clip] = []
     for seg in ordered:
         if clips and abs(clips[-1].end - seg.start) < 1e-3 and seg.id - 1 in kept_ids:
-            clips[-1] = Clip(segment_ids=clips[-1].segment_ids + [seg.id], start=clips[-1].start, end=seg.end)
+            clips[-1] = Clip(video_id=video_id, segment_ids=clips[-1].segment_ids + [seg.id], start=clips[-1].start, end=seg.end)
         else:
-            clips.append(Clip(segment_ids=[seg.id], start=seg.start, end=seg.end))
+            clips.append(Clip(video_id=video_id, segment_ids=[seg.id], start=seg.start, end=seg.end))
     return clips
 
 
-def _reordered_clips(order_ids: list[int], kept_ids: set[int], segments: list[Segment]) -> list[Clip]:
+def _reordered_clips(video_id: str, order_ids: list[int], kept_ids: set[int], segments: list[Segment]) -> list[Clip]:
     """For operation="reorder": one clip per kept segment, in the given
     (non-chronological) order — no adjacency merging, since order is the
     whole point (e.g. "build a 3-act story", "start with the strongest hook")."""
     by_id = {s.id: s for s in segments}
     return [
-        Clip(segment_ids=[sid], start=by_id[sid].start, end=by_id[sid].end)
+        Clip(video_id=video_id, segment_ids=[sid], start=by_id[sid].start, end=by_id[sid].end)
         for sid in order_ids if sid in kept_ids
     ]
 
@@ -196,7 +196,7 @@ def resolve(intent: Intent, timeline: Timeline) -> EDL:
         if not ranges:
             return EDL(
                 video_id=timeline.video_id,
-                clips=[Clip(segment_ids=[s.id for s in segments], start=0.0, end=timeline.duration_sec)],
+                clips=[Clip(video_id=timeline.video_id, segment_ids=[s.id for s in segments], start=0.0, end=timeline.duration_sec)],
                 summary="No filler words detected — nothing to remove.",
             )
         edl = build_manual_edl(timeline, ranges)
@@ -254,9 +254,9 @@ def resolve(intent: Intent, timeline: Timeline) -> EDL:
         )
 
     if intent.operation == "reorder" and ranked_ids:
-        clips = _reordered_clips(ranked_ids, kept_ids, segments)
+        clips = _reordered_clips(timeline.video_id, ranked_ids, kept_ids, segments)
     else:
-        clips = _segments_to_clips(kept_ids, segments)
+        clips = _segments_to_clips(timeline.video_id, kept_ids, segments)
 
     transitions = [
         Transition(at_clip_boundary=i, type="audio_fade", duration_sec=0.03)

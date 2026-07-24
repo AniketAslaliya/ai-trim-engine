@@ -38,6 +38,15 @@ All items below reduce to three primitives — **filter** (keep/remove segments 
 
 **Format/platform requests** ("make suitable for Reels/TikTok") set `constraints.aspect_ratio`, which the render stage now actually acts on — a centered crop to the target ratio (9:16, 1:1, 16:9, 4:5), computed from the source's real resolution, applied during the per-clip encode pass. Previously this constraint was captured by intent parsing but silently ignored by rendering.
 
+### 5b. Multi-video composition ("phase 2" — combine + match cut)
+
+A second capability alongside single-video trimming: `POST /compose` takes several already-extracted `video_id`s plus one natural-language description of the desired sequence/story, and produces one combined output pulling clips from multiple source files.
+
+- **Sequencing**: one LLM call (`compose.py`) sees every non-silent segment from every provided video, tagged with its source `video_id`, and returns the segments to use in final output order. This reuses the same tag data (`transcript`/`scene_tags`/`objects`/`action_tags`) the single-video pipeline already extracts — no new extraction work.
+- **Match cuts — tag-similarity heuristic, not true CV matching**: at each point the sequence crosses from one source video to another, the prompt explicitly asks the LLM to prefer a segment whose tags resemble the outgoing segment's, and the backend independently computes and reports a tag-overlap count for that join. This is a real, inspectable signal — not a fabricated "match cut applied" claim — but it is NOT frame-level match-cut detection (no optical flow, no composition/motion matching). See §9a.
+- **Cross-source rendering** (`render_multi` in `ffmpeg_render.py`): different source videos can disagree on resolution/fps/audio format, which the single-video pipeline never had to handle. Every clip is normalized (scaled+letterboxed to the first source's resolution by default, or cropped-to-fill a requested aspect ratio) to a common canvas/fps/audio format before concatenation, verified against real mixed-resolution-risk test videos.
+- **Storage/job model**: unchanged async job pattern (`kind="compose"`), stored under `storage/_compose/` since a composed output doesn't belong to any single source video.
+
 ## 6. Architecture (see CLAUDE.md + `.claude/skills/*` for implementation-level detail)
 
 ```
@@ -103,7 +112,8 @@ These are real limitations, not bugs — each is a deliberate scope call given d
 - **Speaker diarization** — `Segment.speaker` exists in the schema but is never populated (no diarization model wired in). "Keep only the shots where I'm speaking" cannot be resolved by speaker identity today; it degrades to a semantic guess over transcript/action_tags (e.g. "talking_to_camera") instead.
 - **Named person identification / on-screen tracking** — "remove every shot where Person A appears," "remove everything before I enter the frame" need face detection + identity clustering across the video. Not implemented — would need a real CV pipeline (face embeddings + clustering), out of scope for the current build. The system will not fabricate a person-identity signal; these prompts fall through to a best-effort transcript/object guess.
 - **True audio emotion/event detection** (laughter, clapping, applause as *audio*) — not implemented; there is no audio classifier. What *is* implemented: `action_tags` from the per-shot visual keyframe (the same VLM call as `scene_tags`/`objects`) can genuinely detect visible laughing/clapping/walking when it's visually evident in the frame — real signal, but visual-only, and will miss audio-only laughter (someone laughing off-camera or the camera not catching an expressive frame at the right instant).
-- **Beat/rhythm detection** ("cut on every beat," true match cuts) — not implemented; no audio-rhythm analysis (e.g. onset/beat detection). Cinematic pacing requests degrade to `rank_select`/`reorder` on transcript+visual signals, not actual beat-synced cutting.
+- **Beat/rhythm detection** ("cut on every beat") — not implemented; no audio-rhythm analysis (e.g. onset/beat detection). Cinematic pacing requests degrade to `rank_select`/`reorder` on transcript+visual signals, not actual beat-synced cutting.
+- **Match cuts are a tag-similarity heuristic, not true CV matching** — see §5b. `compose.py` asks the LLM to prefer cross-video cut points where `scene_tags`/`objects`/`action_tags` overlap, and reports the overlap count for transparency. This is not frame-level match-cut detection (optical flow / pose / composition matching) — that's a real, unimplemented CV problem. Don't expect it to find a true match cut a human editor would (e.g. matching motion direction); it will find *tag-level* rhymes (both shots tagged "walking," both showing the same object).
 - **Retake detection is heuristic, not exact** — `is_duplicate_take` (see §5a below) is transcript-similarity based (difflib ratio > 0.6 against a *later* segment). It will miss retakes with substantially different wording and could rarely false-positive on genuinely repeated phrases. Documented in `extraction/retakes.py`.
 
 ## 10. Deliverables checklist (per assignment)

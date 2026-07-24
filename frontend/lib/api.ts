@@ -17,6 +17,7 @@ export interface Intent {
 }
 
 export interface Clip {
+  video_id: string | null;
   segment_ids: number[];
   start: number;
   end: number;
@@ -31,7 +32,7 @@ export interface EDL {
 export interface JobStatus {
   job_id: string;
   video_id: string;
-  kind: "extraction" | "edit";
+  kind: "extraction" | "edit" | "compose";
   status: "pending" | "running" | "done" | "failed";
   progress: string | null;
   error: string | null;
@@ -132,6 +133,17 @@ export async function getKeepRanges(videoId: string): Promise<KeepRange[]> {
   const resp = await fetch(`${API_BASE}/videos/${videoId}/keep-ranges`);
   const data = await asJson<{ keep_ranges: KeepRange[] }>(resp);
   return data.keep_ranges;
+}
+
+/** Combine several already-extracted videos into one sequence per a
+ * natural-language description of the story/order — see backend/app/compose.py. */
+export async function composeVideos(videoIds: string[], prompt: string): Promise<{ job_id: string }> {
+  const resp = await fetch(`${API_BASE}/compose`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ video_ids: videoIds, prompt }),
+  });
+  return asJson(resp);
 }
 
 export function outputUrl(jobId: string): string {

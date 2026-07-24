@@ -52,3 +52,12 @@ def renders_dir(video_id: str) -> Path:
     d = video_dir(video_id) / "renders"
     d.mkdir(parents=True, exist_ok=True)
     return d
+
+
+def compose_dir() -> Path:
+    """Multi-video compose jobs don't belong to any single video_id, so they
+    get their own top-level storage area instead of living under one of the
+    source videos' folders."""
+    d = STORAGE_DIR / "_compose"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
