@@ -86,6 +86,7 @@ class JobStatus(BaseModel):
     video_id: str
     kind: Literal["extraction", "edit"]
     status: Literal["pending", "running", "done", "failed"]
+    progress: Optional[str] = None
     error: Optional[str] = None
     intent: Optional[Intent] = None
     edl: Optional[EDL] = None

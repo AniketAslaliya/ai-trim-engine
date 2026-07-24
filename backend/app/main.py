@@ -84,13 +84,22 @@ def _compose_with_history(video_id: str, duration: float, one_shot_edl: EDL) -> 
 
 
 def _run_extraction(job_id: str, video_id: str, video_path: str) -> None:
-    update_job(job_id, status="running")
+    update_job(job_id, status="running", progress="Starting...")
+
+    def on_progress(msg: str, partial_timeline: Timeline) -> None:
+        update_job(job_id, progress=msg)
+        # Persisted immediately so GET /videos/{id}/timeline reflects
+        # whatever's done so far, not just the final result — the frontend
+        # can render segments as they're produced instead of a blank screen.
+        with open(_timeline_path(video_id), "w") as f:
+            f.write(partial_timeline.model_dump_json(indent=2))
+
     try:
-        timeline = build_timeline(video_id, video_path)
+        timeline = build_timeline(video_id, video_path, on_progress=on_progress)
         with open(_timeline_path(video_id), "w") as f:
             f.write(timeline.model_dump_json(indent=2))
         reset_keep_ranges(video_id)
-        update_job(job_id, status="done")
+        update_job(job_id, status="done", progress="Done.")
     except Exception as e:
         # Full traceback, not just str(e) — a bare exception message is enough
         # to diagnose a KeyError but useless for "tuple index out of range"
