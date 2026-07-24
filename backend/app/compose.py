@@ -88,6 +88,38 @@ def _tag_overlap(a: Segment, b: Segment) -> int:
 _MIN_TRIM_CLIP_SEC = 0.3
 
 
+def _merge_contiguous(clips: list[Clip], transitions: list[Transition]) -> tuple[list[Clip], list[Transition]]:
+    """Collapses consecutive clips that are the SAME source video and
+    genuinely adjacent in time into one clip — otherwise every internal
+    segment boundary (e.g. a sentence/silence split from extraction) becomes
+    an unnecessary extra cut/fade inside what should be one continuous shot.
+    The single-video pipeline already does this (resolve.py's
+    _segments_to_clips); compose_sequence didn't, which is what produced
+    "extra cuts that aren't needed" whenever a chosen sequence happened to
+    include several consecutive segments from the same video. A cross-video
+    boundary is never merged (different video_id), so this can't interfere
+    with match-cut joins.
+    """
+    merged_clips: list[Clip] = []
+    merged_transitions: list[Transition] = []
+    for c, t in zip(clips, transitions):
+        prev = merged_clips[-1] if merged_clips else None
+        if prev is not None and prev.video_id == c.video_id and abs(prev.end - c.start) < 1e-3:
+            merged_clips[-1] = Clip(
+                video_id=c.video_id, segment_ids=prev.segment_ids + c.segment_ids,
+                start=prev.start, end=c.end,
+            )
+            # t was an interior boundary — no cut happens there anymore, so
+            # its transition (and any match-cut score on it) is dropped.
+        else:
+            merged_clips.append(c)
+            merged_transitions.append(Transition(
+                at_clip_boundary=len(merged_clips) - 1, type=t.type, duration_sec=t.duration_sec,
+                visual_score=t.visual_score, visual_reason=t.visual_reason, audio_delta_db=t.audio_delta_db,
+            ))
+    return merged_clips, merged_transitions
+
+
 def compose_sequence(prompt: str, timelines: dict[str, Timeline], video_paths: dict[str, str] | None = None) -> EDL:
     if not config.llm_configured():
         raise ValueError(
@@ -177,6 +209,8 @@ def compose_sequence(prompt: str, timelines: dict[str, Timeline], video_paths: d
     if not clips:
         raise ValueError("None of the selected segments were valid — try a different description.")
 
+    clips, transitions = _merge_contiguous(clips, transitions)
+
     total = sum(c.end - c.start for c in clips)
     match_summary = "; ".join(match_notes) if match_notes else "single video, no cross-video joins"
     summary = (
@@ -220,6 +254,8 @@ def build_manual_compose_edl(clips_in: list[tuple[str, float, float]], video_pat
                 note += f": {score['visual_reason']})"
             match_notes.append(note)
         prev_vid, prev_end = vid, end
+
+    clips, transitions = _merge_contiguous(clips, transitions)
 
     total = sum(c.end - c.start for c in clips)
     match_summary = "; ".join(match_notes) if match_notes else "single video, no cross-video joins"
