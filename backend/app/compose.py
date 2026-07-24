@@ -6,13 +6,16 @@ trimming.
 Honest scope (see PRD): still not full frame-level CV match-cut detection
 (optical flow / pose-tracking / motion-vector matching across shots) — that
 remains a real, unproven-in-scope CV problem. What this DOES do at each
-cross-video join: the LLM sees every candidate segment's visual tags to bias
-sequencing toward tag-similar joins (cheap, always available, guides *which*
-sequence gets picked), and separately — once a sequence is chosen — actually
-extracts the two real boundary frames and asks a vision LLM to judge visual
-continuity between them, plus measures real audio-level continuity via
-ffmpeg (see match_cut.py). That second part is genuine frame/audio analysis,
-not a tag proxy; it's reported per join so the "match" is inspectable.
+cross-video join: the LLM sees every candidate segment (tags + is_silence,
+nothing pre-filtered) to decide WHICH segments and order satisfy the
+instruction, then — once a sequence is chosen — for every cross-video join,
+match_cut.find_best_trim searches nearby candidate cut points inside each
+segment's own bounds via real vision-LLM frame comparisons, so the actual
+cut point lands on the best-matching moment (e.g. skipping past a
+preparatory/wind-up motion) instead of just accepting the segment's original
+boundary. Never removes/trims content beyond what the instruction asked for
+— the search only adjusts WHERE inside already-selected content to cut, not
+WHAT content is included.
 """
 import json
 
@@ -23,17 +26,33 @@ _COMPOSE_PROMPT = """You are combining segments from MULTIPLE videos into one se
 
 Instruction: {prompt}
 
-Segments from all videos (each tagged with which video it came from). Silence segments are already excluded:
+Segments from every video (each tagged with which video it came from, in is_silence: true/false — a
+segment with no speech can still be visually essential, e.g. a silent hand-movement shot; it is NOT
+pre-filtered out for you):
 {segments_json}
+
+Critical rule: only remove/trim/exclude segments the instruction actually asked you to remove. If the
+instruction is purely about ORDER or MATCH-CUTTING ("combine these into one sequence with a match cut"),
+do not drop silent segments, "boring" segments, or anything else on your own initiative — include
+everything relevant to the requested story, in the requested order. Only exclude segments when the
+instruction explicitly asks for a removal (e.g. "cut the silences," "skip the boring parts").
 
 Pick the segments to include, in the FINAL desired order — order matters, this is the actual output sequence.
 
-When there's a genuine choice between multiple segments that would equally satisfy the instruction at a
-point where the sequence crosses from one video to another, prefer the option whose scene_tags/objects/
-action_tags most resemble the segment immediately before it — this creates a "match cut" (the content
-visually rhymes across the join, a real and valued editing technique). Do not sacrifice the user's actual
-instruction just to force a match — a good match cut is a bonus when available, never a requirement that
-overrides what they asked for.
+Match cuts — when the instruction asks for a match cut (or "natural" cut) across two videos, look for the
+SAME EVENT/ACTION straddling the join: e.g. one clip's action_tags/transcript show a motion or gesture
+CONCLUDING (a hand movement finishing, a person sitting down) right where another clip's action_tags/
+transcript show the SAME KIND of motion CONTINUING or STARTING. Prefer joining an action-ending segment to
+an action-starting segment of the same action type — that is what makes a cut read as continuous motion
+across two different videos, not just cutting on a similar background/object. Report which action you
+matched on. If a segment shows a "wind-up"/preparatory motion (about to do something, not yet doing it)
+right before a segment showing the completed motion, prefer landing the cut AFTER the wind-up so the
+preparation isn't shown as dead time in the middle of the sequence — but ONLY skip that wind-up material
+if it was already part of what the instruction asked you to trim; don't invent a removal the user never
+asked for. When there's a genuine choice between multiple segments that would equally satisfy the
+instruction, prefer the option whose scene_tags/objects/action_tags most resemble the segment immediately
+before it. Do not sacrifice the user's actual instruction just to force a match — a good match cut is a
+bonus when available, never a requirement that overrides what they asked for.
 
 Return the sequence as an array of {{"video_id": ..., "segment_id": ...}} objects, in final order.
 """
@@ -63,6 +82,12 @@ def _tag_overlap(a: Segment, b: Segment) -> int:
     return len(a_tags & b_tags)
 
 
+# A trim search is never allowed to shrink a clip below this — a "better"
+# cut point that would leave almost nothing of the segment is a search
+# artifact, not a real improvement.
+_MIN_TRIM_CLIP_SEC = 0.3
+
+
 def compose_sequence(prompt: str, timelines: dict[str, Timeline], video_paths: dict[str, str] | None = None) -> EDL:
     if not config.llm_configured():
         raise ValueError(
@@ -70,18 +95,22 @@ def compose_sequence(prompt: str, timelines: dict[str, Timeline], video_paths: d
             "no LLM provider is configured."
         )
 
+    # Every segment is a candidate, including silent ones — a segment with no
+    # speech can still be the exact visual content a match-cut or reorder
+    # request needs (e.g. a silent hand-movement shot). Silently pre-filtering
+    # "no dialogue" segments here used to mean they were removed even when
+    # the user never asked for any silence to be cut — see PRD §9a.
     compact = []
     for vid, tl in timelines.items():
         for s in tl.segments:
-            if s.is_silence:
-                continue  # not useful as story content in a multi-video edit
             compact.append({
                 "video_id": vid, "segment_id": s.id, "transcript": s.transcript,
+                "is_silence": s.is_silence,
                 "scene_tags": s.scene_tags, "objects": s.objects, "action_tags": s.action_tags,
             })
 
     if not compact:
-        raise ValueError("None of the provided videos have any non-silent content to combine.")
+        raise ValueError("None of the provided videos have any content to combine.")
 
     data = llm.complete_json(
         None,
@@ -110,13 +139,28 @@ def compose_sequence(prompt: str, timelines: dict[str, Timeline], video_paths: d
         if seg is None:
             continue  # LLM referenced something that doesn't exist — skip rather than fail the whole compose
         clips.append(Clip(video_id=vid, segment_ids=[seg.id], start=seg.start, end=seg.end))
-        transition = Transition(at_clip_boundary=len(clips) - 1, type="audio_fade", duration_sec=0.03)
+        idx = len(clips) - 1
+        transition = Transition(at_clip_boundary=idx, type="audio_fade", duration_sec=0.03)
         transitions.append(transition)
         if prev_seg is not None and prev_vid != vid:
             note = f"{prev_vid[:8]}→{vid[:8]}"
             score = None
             if video_paths and prev_vid in video_paths and vid in video_paths:
-                score = match_cut.score_join(video_paths[prev_vid], prev_seg.end, video_paths[vid], seg.start)
+                prev_clip = clips[idx - 1]
+                # Search for the actual action-aligned cut point inside each
+                # segment's own bounds (see match_cut.find_best_trim) instead
+                # of accepting the segment boundary as-is — this is what lets
+                # a preparatory/wind-up motion get trimmed away automatically
+                # when a later point in the same segment matches better.
+                refined = match_cut.find_best_trim(
+                    video_paths[prev_vid], prev_clip.start, prev_seg.end,
+                    video_paths[vid], seg.start, seg.end,
+                )
+                if refined["a_end"] - prev_clip.start >= _MIN_TRIM_CLIP_SEC:
+                    prev_clip.end = refined["a_end"]
+                if seg.end - refined["b_start"] >= _MIN_TRIM_CLIP_SEC:
+                    clips[idx].start = refined["b_start"]
+                score = refined
             if score and score["visual_score"] is not None:
                 transition.visual_score = score["visual_score"]
                 transition.visual_reason = score["visual_reason"]

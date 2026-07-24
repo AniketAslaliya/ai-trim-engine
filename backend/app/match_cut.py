@@ -87,3 +87,51 @@ def score_join(video_a: str, a_end: float, video_b: str, b_start: float) -> dict
         result["natural"] = result["visual_score"] >= 6 and result["audio_delta_db"] <= 6
 
     return result
+
+
+def find_best_trim(
+    video_a: str, seg_a_start: float, seg_a_end: float,
+    video_b: str, seg_b_start: float, seg_b_end: float,
+    steps: int = 4,
+) -> dict:
+    """Searches nearby candidate cut points INSIDE each segment's own bounds
+    for the pair that reads as the most natural match cut, instead of just
+    accepting the segment's original boundary. This is what lets a "wind-up"
+    motion at a segment's tail/head get trimmed away automatically: if real
+    frame-continuity scoring comes out meaningfully better a bit earlier/
+    later within the SAME segment, that point is picked. Never searches
+    outside [seg_a_start, seg_a_end] / [seg_b_start, seg_b_end] — this only
+    refines WHERE within already-selected content to cut, it never decides
+    what content to include (that's compose_sequence's job, driven by the
+    user's actual instruction).
+
+    Coordinate-descent, not exhaustive: search `a_end` candidates with `b`
+    fixed at its natural start, then search `b_start` candidates with `a`
+    fixed at the best `a_end` found — up to 2*steps real vision-LLM calls
+    per join, not steps^2.
+    """
+    def candidates(lo: float, hi: float, n: int) -> list[float]:
+        if hi <= lo:
+            return [lo]
+        step = (hi - lo) / max(n - 1, 1)
+        return sorted({round(lo + i * step, 3) for i in range(n)})
+
+    best_a_end, best_b_start = seg_a_end, seg_b_start
+    best_score = None
+    best_result: Optional[dict] = None
+
+    for a_end in candidates(seg_a_start, seg_a_end, steps):
+        r = score_join(video_a, a_end, video_b, best_b_start)
+        if r["visual_score"] is not None and (best_score is None or r["visual_score"] > best_score):
+            best_score, best_a_end, best_result = r["visual_score"], a_end, r
+
+    for b_start in candidates(seg_b_start, seg_b_end, steps):
+        r = score_join(video_a, best_a_end, video_b, b_start)
+        if r["visual_score"] is not None and (best_score is None or r["visual_score"] > best_score):
+            best_score, best_b_start, best_result = r["visual_score"], b_start, r
+
+    return {
+        "a_end": best_a_end,
+        "b_start": best_b_start,
+        **(best_result or {"visual_score": None, "visual_reason": None, "audio_delta_db": None, "natural": None}),
+    }
