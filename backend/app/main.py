@@ -156,7 +156,10 @@ def _run_edit(job_id: str, video_id: str, timeline: Timeline, prompt: str) -> No
         update_job(job_id, edl=edl)
 
         output_path = str(config.renders_dir(video_id) / f"{job_id}.mp4")
-        render(_video_path(video_id), edl, output_path, aspect_ratio=intent.constraints.aspect_ratio)
+        render(
+            _video_path(video_id), edl, output_path,
+            aspect_ratio=intent.constraints.aspect_ratio, denoise=intent.constraints.denoise_audio,
+        )
 
         update_job(job_id, status="done", output_path=output_path)
     except Exception as e:
@@ -185,7 +188,7 @@ def _run_manual_edit(job_id: str, video_id: str, timeline: Timeline, req: Manual
         update_job(job_id, edl=edl)
 
         output_path = str(config.renders_dir(video_id) / f"{job_id}.mp4")
-        render(_video_path(video_id), edl, output_path)
+        render(_video_path(video_id), edl, output_path, denoise=req.denoise_audio)
 
         update_job(job_id, status="done", output_path=output_path)
     except Exception as e:
@@ -229,13 +232,16 @@ def _run_compose(job_id: str, video_ids: list[str], timelines: dict[str, Timelin
         # reuse the existing intent parser just to harvest that constraint —
         # same mechanism single-video edits already use, not new logic.
         aspect_ratio = None
+        denoise = False
         try:
-            aspect_ratio = parse_intent(prompt).constraints.aspect_ratio
+            constraints = parse_intent(prompt).constraints
+            aspect_ratio = constraints.aspect_ratio
+            denoise = constraints.denoise_audio
         except Exception:
-            pass  # a failed/unparseable aspect-ratio hint is not worth failing the whole render over
+            pass  # a failed/unparseable constraint hint is not worth failing the whole render over
 
         output_path = str(config.compose_dir() / f"{job_id}.mp4")
-        render_multi(video_paths, edl, output_path, aspect_ratio=aspect_ratio)
+        render_multi(video_paths, edl, output_path, aspect_ratio=aspect_ratio, denoise=denoise)
 
         update_job(job_id, status="done", progress="Done.", output_path=output_path)
     except Exception as e:
@@ -254,11 +260,15 @@ async def compose_manual_edit(req: ComposeManualEditRequest, background_tasks: B
 
     video_paths = {vid: _video_path(vid) for vid in req.video_ids}
     job = create_job(req.video_ids[0], kind="compose")
-    background_tasks.add_task(_run_compose_manual, job.job_id, video_paths, req.clips, req.aspect_ratio)
+    background_tasks.add_task(
+        _run_compose_manual, job.job_id, video_paths, req.clips, req.aspect_ratio, req.denoise_audio
+    )
     return {"job_id": job.job_id}
 
 
-def _run_compose_manual(job_id: str, video_paths: dict[str, str], clips_in, aspect_ratio: str | None) -> None:
+def _run_compose_manual(
+    job_id: str, video_paths: dict[str, str], clips_in, aspect_ratio: str | None, denoise: bool = False,
+) -> None:
     update_job(job_id, status="running", progress="Applying manual edit...")
     try:
         clip_tuples = [(c.video_id, c.start, c.end) for c in clips_in]
@@ -266,7 +276,7 @@ def _run_compose_manual(job_id: str, video_paths: dict[str, str], clips_in, aspe
         update_job(job_id, edl=edl, progress="Rendering...")
 
         output_path = str(config.compose_dir() / f"{job_id}.mp4")
-        render_multi(video_paths, edl, output_path, aspect_ratio=aspect_ratio)
+        render_multi(video_paths, edl, output_path, aspect_ratio=aspect_ratio, denoise=denoise)
 
         update_job(job_id, status="done", progress="Done.", output_path=output_path)
     except Exception as e:

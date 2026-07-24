@@ -11,6 +11,7 @@ export interface ChatMessage {
 const SAMPLE_PROMPTS = [
   "Remove pauses and silences.",
   "Remove filler words (um, uh, hmm).",
+  "Clean up the background noise.",
   "Keep only outdoor scenes.",
   "Remove all laughing.",
   "Keep only questions.",

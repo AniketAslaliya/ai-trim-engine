@@ -32,7 +32,13 @@ Rules:
 - "predicate" is free text resolved later against a per-segment Timeline; make it
   concrete and checkable (e.g. "segments where the transcript mentions pricing or cost"),
   not vague restatement of the prompt.
-- Only set constraints fields the user actually implied (duration targets, platform/aspect ratio).
+- Only set constraints fields the user actually implied (duration targets, platform/aspect ratio,
+  background noise cleanup).
+- Set constraints.denoise_audio = true whenever the request mentions cleaning up background
+  noise, hiss, hum, wind noise, static, or otherwise wants the audio "cleaner"/"clearer" — this
+  is independent of operation/predicate; a request can be PURELY "remove the background noise"
+  (operation="constrain_only", predicate can note there's no cutting to do) or combined with a
+  cutting request in the same prompt (e.g. "remove the silences and clean up the audio noise").
 """
 
 # Hand-written, not Intent.model_json_schema() — Pydantic v2's auto-generated
@@ -52,8 +58,9 @@ _INTENT_SCHEMA = {
                 "max_duration_sec": {"anyOf": [{"type": "number"}, {"type": "null"}]},
                 "min_segment_gap_sec": {"type": "number"},
                 "aspect_ratio": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+                "denoise_audio": {"type": "boolean"},
             },
-            "required": ["max_duration_sec", "min_segment_gap_sec", "aspect_ratio"],
+            "required": ["max_duration_sec", "min_segment_gap_sec", "aspect_ratio", "denoise_audio"],
         },
     },
     "required": ["operation", "mode", "predicate", "target_signal", "constraints"],

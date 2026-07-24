@@ -109,12 +109,13 @@ export async function retryExtraction(videoId: string): Promise<{ job_id: string
  * chat prompt going through intent parsing. */
 export async function manualEdit(
   videoId: string,
-  removeRanges: { start: number; end: number }[]
+  removeRanges: { start: number; end: number }[],
+  denoiseAudio = false
 ): Promise<{ job_id: string }> {
   const resp = await fetch(`${API_BASE}/videos/${videoId}/manual-edit`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ remove_ranges: removeRanges }),
+    body: JSON.stringify({ remove_ranges: removeRanges, denoise_audio: denoiseAudio }),
   });
   return asJson(resp);
 }
@@ -165,12 +166,13 @@ export async function composeVideos(videoIds: string[], prompt: string): Promise
 export async function composeManualEdit(
   videoIds: string[],
   clips: { video_id: string; start: number; end: number }[],
-  aspectRatio?: string | null
+  aspectRatio?: string | null,
+  denoiseAudio = false
 ): Promise<{ job_id: string }> {
   const resp = await fetch(`${API_BASE}/compose/manual`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ video_ids: videoIds, clips, aspect_ratio: aspectRatio ?? null }),
+    body: JSON.stringify({ video_ids: videoIds, clips, aspect_ratio: aspectRatio ?? null, denoise_audio: denoiseAudio }),
   });
   return asJson(resp);
 }

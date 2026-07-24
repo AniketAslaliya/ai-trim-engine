@@ -200,6 +200,34 @@ export default function Home() {
     }
   }
 
+  async function handleDenoise(video_id: string) {
+    setMessages((m) => [...m, { role: "user", text: "Remove background noise from the audio." }]);
+    setStage("editing");
+    setProgressText("Cleaning up audio noise...");
+    try {
+      const { job_id } = await manualEdit(video_id, [], true);
+      const job = await pollJob(job_id, (j) => setProgressText(j.progress || `Denoise: ${j.status}`));
+      if (job.status === "failed") {
+        setMessages((m) => [
+          ...m,
+          { role: "error", text: `Denoise failed: ${job.error || "unknown error"}`, onRetry: () => handleDenoise(video_id) },
+        ]);
+        setStage("ready");
+        setProgressText("Denoise failed.");
+        return;
+      }
+      setPreviewUrl(outputUrl(job.job_id));
+      setMessages((m) => [...m, { role: "assistant", text: job.edl?.summary || "Noise reduction applied." }]);
+      await refreshKeepRanges(video_id);
+      setStage("ready");
+      setProgressText("");
+    } catch (e) {
+      setMessages((m) => [...m, { role: "error", text: String(e), onRetry: () => handleDenoise(video_id) }]);
+      setStage("ready");
+      setProgressText("Denoise failed.");
+    }
+  }
+
   async function handleManualDelete(video_id: string, start: number, end: number) {
     setMessages((m) => [
       ...m,
@@ -344,6 +372,7 @@ export default function Home() {
               onSeek={handleSeek}
               onRemoveSilence={() => handleSend("Remove pauses and silences.")}
               onManualDelete={(start, end) => handleManualDelete(videoId, start, end)}
+              onDenoise={() => handleDenoise(videoId)}
               busy={busy}
             />
           )}

@@ -50,6 +50,10 @@ class Constraints(BaseModel):
     max_duration_sec: Optional[float] = None
     min_segment_gap_sec: float = 0.1
     aspect_ratio: Optional[str] = None
+    # Set when the user asks to clean up background noise/hiss/hum/wind on
+    # the audio track — a real ffmpeg FFT denoise pass at render time (see
+    # ffmpeg_render.py), not a fabricated capability.
+    denoise_audio: bool = False
 
 
 class Intent(BaseModel):
@@ -101,6 +105,7 @@ class ManualEditRequest(BaseModel):
     """A user-drawn selection to cut, straight from the timeline UI — no LLM
     involved, so this path is instant and free (see resolve/manual.py)."""
     remove_ranges: list[TimeRange]
+    denoise_audio: bool = False
 
 
 class ComposeRequest(BaseModel):
@@ -124,6 +129,7 @@ class ComposeManualEditRequest(BaseModel):
     video_ids: list[str]
     clips: list[ComposeClipInput]
     aspect_ratio: Optional[str] = None
+    denoise_audio: bool = False
 
 
 class JobStatus(BaseModel):

@@ -10,6 +10,7 @@ interface Props {
   onSeek: (t: number) => void;
   onRemoveSilence: () => void;
   onManualDelete: (start: number, end: number) => void;
+  onDenoise: () => void;
   busy: boolean;
 }
 
@@ -72,6 +73,7 @@ export default function VideoTimeline({
   onSeek,
   onRemoveSilence,
   onManualDelete,
+  onDenoise,
   busy,
 }: Props) {
   const sourceDuration = timeline.duration_sec || 1;
@@ -214,6 +216,14 @@ export default function VideoTimeline({
               Remove silence &amp; gaps ({silenceCount})
             </button>
           )}
+          <button
+            onClick={onDenoise}
+            disabled={busy}
+            className="rounded-md bg-neutral-800 px-2.5 py-1 text-[11px] font-medium text-neutral-200 hover:bg-neutral-700 disabled:opacity-40"
+            title="Runs an FFT noise-reduction pass on the audio (ffmpeg afftdn) — real signal processing, not a placeholder"
+          >
+            Remove background noise
+          </button>
           <span className="font-mono text-[11px] text-neutral-500">
             {formatTime(currentTime)} / {formatTime(sequenceDuration)}
           </span>

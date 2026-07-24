@@ -19,6 +19,16 @@ _ASPECT_RATIOS = {
     "4:5": (4, 5),
 }
 
+# ffmpeg's built-in FFT noise reduction — no external model file needed
+# (unlike arnndn), works on generic background noise/hiss/hum, not just
+# speech-tuned denoising. Real signal processing, not a fabricated toggle.
+_DENOISE_FILTER = "afftdn"
+
+
+def _audio_filter_chain(duration: float, denoise: bool) -> str:
+    fade = f"afade=t=in:st=0:d={_FADE_SEC},afade=t=out:st={max(duration - _FADE_SEC, 0)}:d={_FADE_SEC}"
+    return f"{_DENOISE_FILTER},{fade}" if denoise else fade
+
 
 def _get_resolution(video_path: str) -> Optional[tuple[int, int]]:
     cmd = [
@@ -56,7 +66,7 @@ def _crop_filter(src_w: int, src_h: int, aspect_ratio: str) -> Optional[str]:
         return f"crop={src_w}:{new_h}:0:{y}"
 
 
-def render(video_path: str, edl: EDL, output_path: str, aspect_ratio: Optional[str] = None) -> None:
+def render(video_path: str, edl: EDL, output_path: str, aspect_ratio: Optional[str] = None, denoise: bool = False) -> None:
     if not edl.clips:
         raise ValueError("EDL has no clips — nothing to render.")
 
@@ -77,7 +87,7 @@ def render(video_path: str, edl: EDL, output_path: str, aspect_ratio: Optional[s
             cmd = [
                 "ffmpeg", "-y", "-ss", str(clip.start), "-i", video_path,
                 "-t", str(duration),
-                "-af", f"afade=t=in:st=0:d={_FADE_SEC},afade=t=out:st={max(duration - _FADE_SEC, 0)}:d={_FADE_SEC}",
+                "-af", _audio_filter_chain(duration, denoise),
             ]
             if vf:
                 cmd += ["-vf", vf]
@@ -113,7 +123,10 @@ _CANVAS_FOR_RATIO = {
 _TARGET_FPS = 30
 
 
-def render_multi(video_paths: dict[str, str], edl: EDL, output_path: str, aspect_ratio: Optional[str] = None) -> None:
+def render_multi(
+    video_paths: dict[str, str], edl: EDL, output_path: str,
+    aspect_ratio: Optional[str] = None, denoise: bool = False,
+) -> None:
     """Same idea as render(), but each clip can come from a DIFFERENT source
     file (see compose.py) — the real difference is that source videos can
     disagree on resolution/fps/audio format, and ffmpeg's concat demuxer
@@ -151,10 +164,7 @@ def render_multi(video_paths: dict[str, str], edl: EDL, output_path: str, aspect
             cmd = [
                 "ffmpeg", "-y", "-ss", str(clip.start), "-i", video_paths[clip.video_id],
                 "-t", str(duration),
-                "-af", (
-                    f"afade=t=in:st=0:d={_FADE_SEC},"
-                    f"afade=t=out:st={max(duration - _FADE_SEC, 0)}:d={_FADE_SEC}"
-                ),
+                "-af", _audio_filter_chain(duration, denoise),
                 "-vf", vf,
                 "-r", str(_TARGET_FPS),
                 "-c:v", "libx264", "-c:a", "aac", "-ar", "44100", "-ac", "2",

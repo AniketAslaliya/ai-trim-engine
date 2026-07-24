@@ -38,6 +38,8 @@ All items below reduce to three primitives — **filter** (keep/remove segments 
 
 **Format/platform requests** ("make suitable for Reels/TikTok") set `constraints.aspect_ratio`, which the render stage now actually acts on — a centered crop to the target ratio (9:16, 1:1, 16:9, 4:5), computed from the source's real resolution, applied during the per-clip encode pass. Previously this constraint was captured by intent parsing but silently ignored by rendering.
 
+**Background noise removal** ("clean up the background noise," "remove the hiss/hum") sets `constraints.denoise_audio`, recognized by the same intent parser alongside (or independent of) a cutting request. Applied at render time as an FFT noise-reduction pass (ffmpeg's `afftdn` filter — no external model file, unlike `arnndn`) on every clip's audio before the fade guards. Real signal processing, not a placeholder — verified end-to-end against real footage (valid output, audio stream intact). Also exposed as a one-click "Remove background noise" button on the single-video timeline (no LLM call needed, same instant/free path as manual trim) and via chat/compose prompts on both the single-video editor and the combine flow. Like `aspect_ratio`, it is not persisted cumulatively — each edit's own prompt determines whether denoise is applied to that render.
+
 ### 5b. Multi-video composition ("phase 2" — combine + match cut)
 
 A second capability alongside single-video trimming: `POST /compose` takes several already-extracted `video_id`s plus one natural-language description of the desired sequence/story, and produces one combined output pulling clips from multiple source files.
