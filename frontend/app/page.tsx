@@ -2,7 +2,9 @@
 
 import { useRef, useState } from "react";
 import {
+  KeepRange,
   Timeline,
+  getKeepRanges,
   getTimelineIfReady,
   manualEdit,
   outputUrl,
@@ -27,6 +29,7 @@ export default function Home() {
   const [videoId, setVideoId] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [timeline, setTimeline] = useState<Timeline | null>(null);
+  const [keepRanges, setKeepRanges] = useState<KeepRange[] | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [progressText, setProgressText] = useState("");
@@ -42,6 +45,15 @@ export default function Home() {
   const promptQueue = useRef<string[]>([]);
 
   const busy = stage === "uploading" || stage === "extracting" || stage === "editing";
+
+  async function refreshKeepRanges(video_id: string) {
+    try {
+      setKeepRanges(await getKeepRanges(video_id));
+    } catch {
+      // Non-critical — the timeline just falls back to showing the raw
+      // original layout until this succeeds on a later poll/edit.
+    }
+  }
 
   // --- Resizable panels -----------------------------------------------
   function startResize(kind: "sidebar" | "program") {
@@ -97,6 +109,7 @@ export default function Home() {
       }
       const tl = await getTimelineIfReady(video_id);
       if (tl) setTimeline(tl);
+      await refreshKeepRanges(video_id);
       setStage("ready");
       setProgressText("");
       const queued = promptQueue.current;
@@ -135,6 +148,7 @@ export default function Home() {
   async function handleFileChosen(file: File) {
     setPreviewUrl(URL.createObjectURL(file));
     setTimeline(null);
+    setKeepRanges(null);
     setMessages([]);
     promptQueue.current = [];
     setStage("uploading");
@@ -172,6 +186,7 @@ export default function Home() {
       }
       setPreviewUrl(outputUrl(job.job_id));
       setMessages((m) => [...m, { role: "assistant", text: job.edl?.summary || "Edit applied." }]);
+      await refreshKeepRanges(video_id);
       setStage("ready");
       setProgressText("");
     } catch (e) {
@@ -209,6 +224,7 @@ export default function Home() {
       }
       setPreviewUrl(outputUrl(job.job_id));
       setMessages((m) => [...m, { role: "assistant", text: job.edl?.summary || "Manual trim applied." }]);
+      await refreshKeepRanges(video_id);
       setStage("ready");
       setProgressText("");
     } catch (e) {
@@ -285,9 +301,11 @@ export default function Home() {
             <div className="flex flex-1 items-center justify-center bg-black">
               {previewUrl ? (
                 <video
+                  key={previewUrl}
                   ref={videoRef}
                   src={previewUrl}
                   controls
+                  autoPlay
                   onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
                   className="max-h-full w-full"
                 />
@@ -315,6 +333,7 @@ export default function Home() {
           {timeline && videoId && (
             <VideoTimeline
               timeline={timeline}
+              keepRanges={keepRanges}
               currentTime={currentTime}
               onSeek={handleSeek}
               onRemoveSilence={() => handleSend("Remove pauses and silences.")}

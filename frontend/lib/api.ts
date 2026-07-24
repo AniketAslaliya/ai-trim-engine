@@ -120,6 +120,20 @@ export async function getTimelineIfReady(videoId: string): Promise<Timeline | nu
   return asJson(resp);
 }
 
+export interface KeepRange {
+  start: number;
+  end: number;
+}
+
+/** The current cumulative cut state (source-time ranges still kept after
+ * every edit applied so far) — lets the timeline render the actual current
+ * sequence instead of the untouched original layout. */
+export async function getKeepRanges(videoId: string): Promise<KeepRange[]> {
+  const resp = await fetch(`${API_BASE}/videos/${videoId}/keep-ranges`);
+  const data = await asJson<{ keep_ranges: KeepRange[] }>(resp);
+  return data.keep_ranges;
+}
+
 export function outputUrl(jobId: string): string {
   return `${API_BASE}/jobs/${jobId}/output`;
 }

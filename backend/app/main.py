@@ -117,6 +117,20 @@ async def get_timeline(video_id: str):
         raise HTTPException(404, "timeline not ready — check extraction job status")
 
 
+@app.get("/videos/{video_id}/keep-ranges")
+async def get_keep_ranges(video_id: str):
+    """The current cumulative cut state (source-time [start,end] pairs still
+    kept after every edit applied so far) — lets the UI render the timeline
+    as the actual current sequence, not the untouched original layout."""
+    try:
+        with open(_timeline_path(video_id)) as f:
+            duration = json.load(f)["duration_sec"]
+    except FileNotFoundError:
+        raise HTTPException(404, "timeline not ready — run extraction first")
+    ranges = load_keep_ranges(video_id, duration)
+    return {"keep_ranges": [{"start": s, "end": e} for s, e in ranges]}
+
+
 @app.post("/videos/{video_id}/edit")
 async def edit_video(video_id: str, prompt: str, background_tasks: BackgroundTasks):
     try:

@@ -6,7 +6,10 @@ from typing import Optional
 
 from app.schemas import EDL
 
-_FADE_SEC = 0.03
+_FADE_SEC = 0.008  # click-guard only, not an audible fade — 30ms on both sides
+# of every internal join stacked into a noticeable dip; this is short enough
+# to kill the waveform-discontinuity pop but too short to perceive as fading,
+# so a cut reads as a clean join, not a stutter
 
 # Common platform targets. "9:16" covers Reels/TikTok/Shorts requests.
 _ASPECT_RATIOS = {
