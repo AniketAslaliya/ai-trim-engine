@@ -28,7 +28,16 @@ class Segment(BaseModel):
     scene_tags: list[str] = Field(default_factory=list)
     objects: list[str] = Field(default_factory=list)
     audio_events: list[str] = Field(default_factory=list)
+    # Visually-detected actions/expressions from the same per-shot keyframe
+    # call as scene_tags/objects (e.g. "laughing", "clapping", "walking",
+    # "close_up") — zero extra API cost, real visual evidence rather than a
+    # fabricated audio-event classifier we don't have (see PRD known gaps).
+    action_tags: list[str] = Field(default_factory=list)
     filler_words: list[Word] = Field(default_factory=list)
+    # True if a later segment's transcript is highly similar to this one's —
+    # a real (if heuristic) signal for "this looks like a redone take",
+    # not a fabricated one. See extraction/retakes.py.
+    is_duplicate_take: bool = False
 
 
 class Timeline(BaseModel):

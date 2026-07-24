@@ -141,7 +141,7 @@ def _run_edit(job_id: str, video_id: str, timeline: Timeline, prompt: str) -> No
         update_job(job_id, edl=edl)
 
         output_path = str(config.renders_dir(video_id) / f"{job_id}.mp4")
-        render(_video_path(video_id), edl, output_path)
+        render(_video_path(video_id), edl, output_path, aspect_ratio=intent.constraints.aspect_ratio)
 
         update_job(job_id, status="done", output_path=output_path)
     except Exception as e:

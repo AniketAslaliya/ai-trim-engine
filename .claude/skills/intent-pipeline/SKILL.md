@@ -14,9 +14,10 @@ Produces the Timeline. Sub-steps, each independent and individually testable:
 1. Transcription: `faster-whisper`, word-level timestamps.
 2. Silence detection: ffmpeg `silencedetect`, mark segments `is_silence`.
 3. Shot/scene detection: PySceneDetect `detect-content`, defines segment boundaries.
-4. Speaker diarization: pyannote (optional — skip if single-speaker source, don't block on it).
-5. Visual tagging: one VLM/CLIP call per shot keyframe → `scene_tags` + `objects`. Never per-frame.
-6. Audio events (laughter/clapping/music): only if a cheap detector is available; leave `audio_events: []` rather than guessing.
+4. Speaker diarization: **not implemented** — `speaker` stays `null` always today (see PRD §9a). Wire in pyannote or similar if this becomes a priority; don't block other stages on it.
+5. Visual tagging: one VLM call per shot keyframe → `scene_tags` + `objects` + `action_tags` (visible actions/expressions, e.g. laughing/clapping/walking — real visual evidence). All three from the same call. Never per-frame.
+6. Audio events (laughter/clapping/music as *audio*, not visual): **not implemented** — no audio-event classifier exists; leave `audio_events: []` rather than guessing. Use `action_tags` for the visual equivalent instead.
+7. Retake detection: `extraction/retakes.py` marks `is_duplicate_take` via transcript-similarity (difflib) against later segments — heuristic, not exact.
 
 Rule: every sub-step must degrade gracefully (missing diarization ≠ pipeline failure, just `speaker: null` everywhere). Never let an extraction sub-step crash the whole run.
 
@@ -37,7 +38,7 @@ Two paths depending on predicate complexity:
 
 Always emit a human-readable `summary` in the EDL — this is what makes the "how sure are we" problem tractable: a reviewer (or the user) can read the EDL summary before render and catch a bad interpretation for free.
 
-Enforce constraints here, not earlier: if `max_duration_sec` is set, after filtering, trim by dropping lowest-ranked/least-relevant segments until the target is met — never truncate arbitrarily from the end.
+Enforce constraints here, not earlier: if `max_duration_sec` is set, trim by dropping lowest-ranked/least-relevant segments until the target is met — never truncate arbitrarily from the end. This applies even to `constrain_only` with no other filter ("make it shorter"): `resolve()` still runs a ranking call against the intent's own predicate first, so the budget is filled with the *best* content, not just whatever comes first chronologically.
 
 ## Stage 4 — Render (deterministic, ffmpeg)
 

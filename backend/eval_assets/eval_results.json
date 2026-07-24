@@ -1,0 +1,271 @@
+[
+  {
+    "n": 1,
+    "prompt": "Remove pauses and silences.",
+    "operation": "filter",
+    "predicate": "segments where is_silence is true or there are prolonged pauses",
+    "target_signal": [
+      "is_silence"
+    ],
+    "result": "filter 'segments where is_silence is true or there are prolonged pauses': kept 13/24 segments, 10 clips, 169.1s of 177.4s original.",
+    "clips": 10,
+    "ok": true,
+    "time_s": 4.9
+  },
+  {
+    "n": 2,
+    "prompt": "Remove filler words (um, uh, hmm).",
+    "operation": "filter",
+    "predicate": "segments containing filler words such as um, uh, and hmm",
+    "target_signal": [
+      "filler_words"
+    ],
+    "result": "Removed 11 filler word(s). Manual trim: removed 11 selection(s) totaling 5.3s of 177.4s original.",
+    "clips": 12,
+    "ok": true,
+    "time_s": 1.7
+  },
+  {
+    "n": 3,
+    "prompt": "Keep only the final take.",
+    "operation": "filter",
+    "predicate": "segments that represent the final take and are not duplicate earlier retakes",
+    "target_signal": [
+      "is_duplicate_take"
+    ],
+    "result": "(refused) Nothing in this video matched \"segments that represent the final take and are not duplicate earlier retakes\" \u2014 refusing to return an unedited video pretending it worked, or an empty one. Try a different prompt, or this may genuinely not be present in the footage.",
+    "clips": 0,
+    "ok": true,
+    "time_s": 1.8
+  },
+  {
+    "n": 4,
+    "prompt": "Remove dead time between clips.",
+    "operation": "filter",
+    "predicate": "segments where speech is absent or silent",
+    "target_signal": [
+      "is_silence"
+    ],
+    "result": "filter 'segments where speech is absent or silent': kept 13/24 segments, 10 clips, 169.1s of 177.4s original.",
+    "clips": 10,
+    "ok": true,
+    "time_s": 2.5
+  },
+  {
+    "n": 5,
+    "prompt": "Remove the intro.",
+    "operation": "filter",
+    "predicate": "segments belonging to the introduction or opening part of the video",
+    "target_signal": [
+      "scene_tags",
+      "transcript"
+    ],
+    "result": "filter 'segments belonging to the introduction or opening part of the video': kept 21/24 segments, 1 clips, 167.7s of 177.4s original.",
+    "clips": 1,
+    "ok": true,
+    "time_s": 3.9
+  },
+  {
+    "n": 6,
+    "prompt": "Keep only the interview.",
+    "operation": "filter",
+    "predicate": "segments where the interview is taking place",
+    "target_signal": [
+      "scene_tags",
+      "transcript"
+    ],
+    "result": "(refused) Nothing in this video matched \"segments where the interview is taking place\" \u2014 refusing to return an unedited video pretending it worked, or an empty one. Try a different prompt, or this may genuinely not be present in the footage.",
+    "clips": 0,
+    "ok": true,
+    "time_s": 3.8
+  },
+  {
+    "n": 7,
+    "prompt": "Remove all B-roll.",
+    "operation": "filter",
+    "predicate": "segments containing b-roll footage",
+    "target_signal": [
+      "scene_tags"
+    ],
+    "result": "filter 'segments containing b-roll footage': kept 4/24 segments, 1 clips, 0.9s of 177.4s original.",
+    "clips": 1,
+    "ok": true,
+    "time_s": 3.9
+  },
+  {
+    "n": 8,
+    "prompt": "Keep only outdoor scenes.",
+    "operation": "filter",
+    "predicate": "segments where the scene_tags indicate an outdoor environment",
+    "target_signal": [
+      "scene_tags"
+    ],
+    "result": "(refused) Nothing in this video matched \"segments where the scene_tags indicate an outdoor environment\" \u2014 refusing to return an unedited video pretending it worked, or an empty one. Try a different prompt, or this may genuinely not be present in the footage.",
+    "clips": 0,
+    "ok": true,
+    "time_s": 3.8
+  },
+  {
+    "n": 9,
+    "prompt": "Remove every shot where Person A appears.",
+    "operation": "filter",
+    "predicate": "segments where Person A is visible in the frame",
+    "target_signal": [
+      "objects",
+      "transcript"
+    ],
+    "result": "filter 'segments where Person A is visible in the frame': kept 24/24 segments, 1 clips, 177.4s of 177.4s original.",
+    "clips": 1,
+    "ok": true,
+    "time_s": 3.1
+  },
+  {
+    "n": 10,
+    "prompt": "Keep only the shots where I'm speaking.",
+    "operation": "filter",
+    "predicate": "segments where a speaker is talking",
+    "target_signal": [
+      "speaker",
+      "transcript"
+    ],
+    "result": "filter 'segments where a speaker is talking': kept 10/24 segments, 7 clips, 168.9s of 177.4s original.",
+    "clips": 7,
+    "ok": true,
+    "time_s": 3.4
+  },
+  {
+    "n": 11,
+    "prompt": "Remove all laughing.",
+    "operation": "filter",
+    "predicate": "segments where people are laughing",
+    "target_signal": [
+      "action_tags"
+    ],
+    "result": "filter 'segments where people are laughing': kept 24/24 segments, 1 clips, 177.4s of 177.4s original.",
+    "clips": 1,
+    "ok": true,
+    "time_s": 3.4
+  },
+  {
+    "n": 12,
+    "prompt": "Keep only emotional moments.",
+    "operation": "rank_select",
+    "predicate": "segments containing strong emotional moments or reactions",
+    "target_signal": [
+      "action_tags",
+      "transcript"
+    ],
+    "result": "(refused) Nothing in this video matched \"segments containing strong emotional moments or reactions\" \u2014 refusing to return an unedited video pretending it worked, or an empty one. Try a different prompt, or this may genuinely not be present in the footage.",
+    "clips": 0,
+    "ok": true,
+    "time_s": 3.4
+  },
+  {
+    "n": 13,
+    "prompt": "Keep moments where people are clapping.",
+    "operation": "filter",
+    "predicate": "segments where people are visibly clapping",
+    "target_signal": [
+      "action_tags"
+    ],
+    "result": "(refused) Nothing in this video matched \"segments where people are visibly clapping\" \u2014 refusing to return an unedited video pretending it worked, or an empty one. Try a different prompt, or this may genuinely not be present in the footage.",
+    "clips": 0,
+    "ok": true,
+    "time_s": 3.8
+  },
+  {
+    "n": 14,
+    "prompt": "Remove every time I mention pricing.",
+    "operation": "filter",
+    "predicate": "segments where the transcript mentions pricing, costs, or money",
+    "target_signal": [
+      "transcript"
+    ],
+    "result": "filter 'segments where the transcript mentions pricing, costs, or money': kept 24/24 segments, 1 clips, 177.4s of 177.4s original.",
+    "clips": 1,
+    "ok": true,
+    "time_s": 3.4
+  },
+  {
+    "n": 15,
+    "prompt": "Keep only questions.",
+    "operation": "filter",
+    "predicate": "segments where the transcript is phrased as a question",
+    "target_signal": [
+      "transcript"
+    ],
+    "result": "filter 'segments where the transcript is phrased as a question': kept 1/24 segments, 1 clips, 14.1s of 177.4s original.",
+    "clips": 1,
+    "ok": true,
+    "time_s": 3.1
+  },
+  {
+    "n": 16,
+    "prompt": "Remove repeated sentences.",
+    "operation": "filter",
+    "predicate": "segments whose transcript content is an earlier retake or closely repeats a later segment",
+    "target_signal": [
+      "is_duplicate_take",
+      "transcript"
+    ],
+    "result": "filter 'segments whose transcript content is an earlier retake or closely repeats a later segment': kept 24/24 segments, 1 clips, 177.4s of 177.4s original.",
+    "clips": 1,
+    "ok": true,
+    "time_s": 3.5
+  },
+  {
+    "n": 17,
+    "prompt": "Trim for fast pacing.",
+    "operation": "constrain_only",
+    "predicate": "remove slow paced segments and pauses",
+    "target_signal": [
+      "is_silence"
+    ],
+    "result": "constrain_only 'remove slow paced segments and pauses': kept 24/24 segments, 1 clips, 177.4s of 177.4s original.",
+    "clips": 1,
+    "ok": true,
+    "time_s": 1.5
+  },
+  {
+    "n": 18,
+    "prompt": "Create a highlight reel.",
+    "operation": "rank_select",
+    "predicate": "segments containing the most important and engaging highlights of the video",
+    "target_signal": [
+      "transcript",
+      "scene_tags",
+      "action_tags"
+    ],
+    "result": "rank_select 'segments containing the most important and engaging highlights of the video': kept 5/24 segments, 5 clips, 159.0s of 177.4s original.",
+    "clips": 5,
+    "ok": true,
+    "time_s": 3.9
+  },
+  {
+    "n": 19,
+    "prompt": "Make this under 30 seconds.",
+    "operation": "constrain_only",
+    "predicate": "select the most engaging content to fit the target duration",
+    "target_signal": [
+      "transcript"
+    ],
+    "result": "constrain_only 'select the most engaging content to fit the target duration': kept 2/24 segments, 2 clips, 28.9s of 177.4s original.",
+    "clips": 2,
+    "ok": true,
+    "time_s": 3.5
+  },
+  {
+    "n": 20,
+    "prompt": "Make it more engaging.",
+    "operation": "rank_select",
+    "predicate": "segments with the highest engagement, emotional peaks, and dynamic viewer interest",
+    "target_signal": [
+      "transcript",
+      "action_tags"
+    ],
+    "result": "rank_select 'segments with the highest engagement, emotional peaks, and dynamic viewer interest': kept 5/24 segments, 5 clips, 159.0s of 177.4s original.",
+    "clips": 5,
+    "ok": true,
+    "time_s": 3.5
+  }
+]

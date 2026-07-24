@@ -25,16 +25,18 @@ A prompt-to-edit engine: `(source video, natural language instruction) → trimm
 
 All items below reduce to three primitives — **filter** (keep/remove segments matching a condition), **rank-select** (choose the best N segments by a scored criterion), **constrain** (fit duration/aspect ratio/pacing target). Requirement groups map to these primitives so new prompts don't need new code paths, only better predicates/signals.
 
-| Group | Examples | Primitive(s) | Signal(s) needed |
-|---|---|---|---|
-| Basic edits | remove pauses, filler words, retakes, dead time, keep final take | filter | word timestamps, silence detection, repeated-transcript detection |
-| Scene-based | remove intro/outro, keep only interview, remove B-roll, keep outdoor scenes | filter | shot boundaries + scene/location tags (VLM caption per shot) |
-| Person/object | remove Person A's shots, keep shots where product visible | filter | face/person clustering, object tags per shot |
-| Emotion/action | remove awkward moments, keep funniest, keep clapping | filter + rank | audio/visual emotion tags, laughter/clap audio events, LLM ranking |
-| Speech/content | remove pricing mentions, keep only questions, remove off-topic | filter | transcript + LLM classification per segment |
-| Cinematic | fast pacing, match cuts, cut on beat, trailer-style | constrain + rank | beat/rhythm detection, LLM pacing plan |
-| Storytelling | best moments, hook first, payoff last, story arc | rank + reorder | LLM ranking + LLM ordering plan |
-| Intelligent/vague | "make it shorter," "more engaging," "under 30s," "focus on me" | constrain (+ implicit filter/rank) | LLM resolves vague request into one of the above primitives with explicit constraints |
+| Group | Examples | Primitive(s) | Signal(s) needed | Status |
+|---|---|---|---|---|
+| Basic edits | remove pauses, filler words, retakes, dead time, keep final take | filter | word timestamps, silence detection, transcript-similarity retake clustering | ✅ implemented (silence/filler deterministic + word-level; retakes via `is_duplicate_take` heuristic) |
+| Scene-based | remove intro/outro, keep only interview, remove B-roll, keep outdoor scenes | filter | shot boundaries + scene/location tags (VLM caption per shot) | ✅ scene_tags/objects work well; "B-roll"/"interview" rely on the LLM inferring it from tags, no explicit shot-role classifier |
+| Person/object | remove Person A's shots, keep shots where product visible | filter | face/person clustering, object tags per shot | ⚠️ object-based (laptop, phone, product) works; named-person identity (`Person A`) and speaker-based ("I'm speaking") are **not implemented** — see §9a |
+| Emotion/action | remove awkward moments, keep funniest, keep clapping | filter + rank_select | visual `action_tags` (laughing/clapping/walking from the shot keyframe), LLM ranking | ⚠️ visual-evidence only, no audio emotion detector — see §9a |
+| Speech/content | remove pricing mentions, keep only questions, remove off-topic | filter | transcript + LLM classification per segment | ✅ implemented via semantic resolve |
+| Cinematic | fast pacing, match cuts, cut on beat, trailer-style | rank_select + reorder | LLM ranking + LLM ordering plan | ⚠️ ranking/reordering implemented; true beat/rhythm-synced cutting is **not** (no audio-rhythm analysis) |
+| Storytelling | best moments, hook first, payoff last, story arc | rank_select + reorder | LLM ranking + LLM ordering plan | ✅ implemented — `reorder` builds clips in the LLM's given sequence instead of always chronological |
+| Intelligent/vague | "make it shorter," "more engaging," "under 30s," "focus on me" | constrain_only (+ implicit rank) | `constrain_only` now ranks by the intent's own predicate before trimming to the duration budget, instead of chopping chronologically | ✅ implemented |
+
+**Format/platform requests** ("make suitable for Reels/TikTok") set `constraints.aspect_ratio`, which the render stage now actually acts on — a centered crop to the target ratio (9:16, 1:1, 16:9, 4:5), computed from the source's real resolution, applied during the per-clip encode pass. Previously this constraint was captured by intent parsing but silently ignored by rendering.
 
 ## 6. Architecture (see CLAUDE.md + `.claude/skills/*` for implementation-level detail)
 
@@ -87,12 +89,22 @@ output video + human-readable edit summary
 
 ## 9. Known risks / edge cases
 
-- **ASR errors** → wrong cut boundaries for word-level operations. Mitigation: pad cuts by ~100-150ms, never cut mid-word.
+- **ASR errors** → wrong cut boundaries for word-level operations. Mitigation: pad cuts by ~100-150ms (see `_FILLER_PAD_SEC`), never cut mid-word.
 - **Visual tagging false negatives/positives** (e.g., "laptop visible") → wrong segments removed. Mitigation: report confidence, skip segments below a threshold rather than guessing.
 - **Ambiguous boundaries** ("remove the intro") → LLM must infer where intro ends; no ground truth. Mitigation: surface the inferred boundary in the edit summary so it's checkable.
-- **Subjective prompts** ("more engaging," "funniest") → no ground truth, high run-to-run variance. Mitigation: treat as ranking with an explainable score, not a black-box decision; state this limitation explicitly rather than overclaiming accuracy.
+- **Subjective prompts** ("more engaging," "funniest") → no ground truth, high run-to-run variance. Mitigation: `rank_select` treats these as an explainable ordering (see §5a), not a black-box decision; default to selecting roughly half of what's ranked-relevant when no explicit duration is given, rather than "keep everything vaguely related."
 - **Conflicting/impossible prompts** ("under 30s" but nothing else to cut) → mitigation: return the closest achievable result plus a clear message, never silently fail or overcut past a floor.
 - **Empty result** (predicate matches nothing, or everything) → mitigation: refuse and explain rather than emitting a 0-length or unedited video.
+
+### 9a. Known capability gaps (honestly unimplemented, not silently faked)
+
+These are real limitations, not bugs — each is a deliberate scope call given day-build constraints, not something the system will falsely claim to do:
+
+- **Speaker diarization** — `Segment.speaker` exists in the schema but is never populated (no diarization model wired in). "Keep only the shots where I'm speaking" cannot be resolved by speaker identity today; it degrades to a semantic guess over transcript/action_tags (e.g. "talking_to_camera") instead.
+- **Named person identification / on-screen tracking** — "remove every shot where Person A appears," "remove everything before I enter the frame" need face detection + identity clustering across the video. Not implemented — would need a real CV pipeline (face embeddings + clustering), out of scope for the current build. The system will not fabricate a person-identity signal; these prompts fall through to a best-effort transcript/object guess.
+- **True audio emotion/event detection** (laughter, clapping, applause as *audio*) — not implemented; there is no audio classifier. What *is* implemented: `action_tags` from the per-shot visual keyframe (the same VLM call as `scene_tags`/`objects`) can genuinely detect visible laughing/clapping/walking when it's visually evident in the frame — real signal, but visual-only, and will miss audio-only laughter (someone laughing off-camera or the camera not catching an expressive frame at the right instant).
+- **Beat/rhythm detection** ("cut on every beat," true match cuts) — not implemented; no audio-rhythm analysis (e.g. onset/beat detection). Cinematic pacing requests degrade to `rank_select`/`reorder` on transcript+visual signals, not actual beat-synced cutting.
+- **Retake detection is heuristic, not exact** — `is_duplicate_take` (see §5a below) is transcript-similarity based (difflib ratio > 0.6 against a *later* segment). It will miss retakes with substantially different wording and could rarely false-positive on genuinely repeated phrases. Documented in `extraction/retakes.py`.
 
 ## 10. Deliverables checklist (per assignment)
 

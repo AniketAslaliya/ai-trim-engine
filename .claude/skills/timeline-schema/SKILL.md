@@ -27,8 +27,10 @@ One Timeline per source video, cached — never regenerated per prompt.
       "shot_boundary": true,
       "scene_tags": ["office", "indoor"],
       "objects": ["laptop", "desk"],
+      "action_tags": [],
       "audio_events": [],
-      "filler_words": [{"text": "um", "start": 1.8, "end": 2.0}]
+      "filler_words": [{"text": "um", "start": 1.8, "end": 2.0}],
+      "is_duplicate_take": false
     }
   ]
 }
@@ -36,9 +38,10 @@ One Timeline per source video, cached — never regenerated per prompt.
 
 Segment boundaries come from shot detection first, then split further at silence gaps — segments should be small enough (a few seconds) that filtering at segment granularity doesn't lose precision, but not so small that every word is its own segment.
 
-- `scene_tags` / `objects`: from one VLM caption call per shot keyframe, not per frame.
-- `audio_events`: laughter, clapping, music — from audio event detection, populate only if the signal exists; empty list is valid, never fabricate a tag.
-- `speaker`: null if diarization wasn't run or single-speaker video.
+- `scene_tags` / `objects` / `action_tags`: all three from the SAME VLM call on one shot keyframe, not per frame. `action_tags` is visible actions/expressions/framing (e.g. "laughing", "clapping", "walking", "close_up") — real visual evidence, not an audio classifier.
+- `audio_events`: reserved for real audio-event detection (laughter/clapping/music as *audio*) — **not currently populated by anything** (no audio-event model wired in); always `[]` today. Don't assume this field has data — use `action_tags` for the visual equivalent instead. See PRD §9a.
+- `speaker`: null — diarization is not implemented (see PRD §9a). Never populated today; the `speaker` target_signal path in resolve.py's deterministic matcher exists for when this changes, but currently always falls through.
+- `is_duplicate_take`: true if a *later* segment's transcript is highly similar (difflib ratio > 0.6) — a heuristic signal for retakes, computed once per extraction in `extraction/retakes.py`. Not exact; documented as heuristic in PRD §9a.
 
 ## 2. Intent (output of LLM intent-parsing stage)
 

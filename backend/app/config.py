@@ -29,6 +29,11 @@ def llm_configured() -> bool:
     return bool(GEMINI_API_KEY) if LLM_PROVIDER == "gemini" else bool(ANTHROPIC_API_KEY)
 
 
+# Concurrent shot-tagging calls during extraction. Free-tier keys should keep
+# this low (shared per-minute quota); a paid/billed key can raise it since
+# the whole point is cutting wall-clock time on multi-shot videos.
+VISUAL_TAG_CONCURRENCY = int(os.environ.get("VISUAL_TAG_CONCURRENCY", "6"))
+
 SILENCE_NOISE_DB = float(os.environ.get("SILENCE_NOISE_DB", "-30"))
 SILENCE_MIN_DURATION_SEC = float(os.environ.get("SILENCE_MIN_DURATION_SEC", "0.4"))
 

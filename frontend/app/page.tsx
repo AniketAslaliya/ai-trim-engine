@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import {
   Timeline,
-  getTimeline,
+  getTimelineIfReady,
   manualEdit,
   outputUrl,
   pollJob,
@@ -16,6 +16,12 @@ import VideoTimeline from "@/components/VideoTimeline";
 
 type Stage = "idle" | "uploading" | "extracting" | "ready" | "editing" | "extraction_failed";
 
+const DEFAULT_SIDEBAR_WIDTH = 340;
+const MIN_SIDEBAR_WIDTH = 260;
+const MAX_SIDEBAR_WIDTH = 640;
+const DEFAULT_PROGRAM_HEIGHT = 420;
+const MIN_PROGRAM_HEIGHT = 200;
+
 export default function Home() {
   const [stage, setStage] = useState<Stage>("idle");
   const [videoId, setVideoId] = useState<string | null>(null);
@@ -23,23 +29,59 @@ export default function Home() {
   const [timeline, setTimeline] = useState<Timeline | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [statusText, setStatusText] = useState("");
+  const [progressText, setProgressText] = useState("");
+
+  const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
+  const [programHeight, setProgramHeight] = useState(DEFAULT_PROGRAM_HEIGHT);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   // Prompts sent while extraction is still running get queued here and drain
   // automatically once the Timeline is ready — the user shouldn't have to
-  // wait for a spinner before they're allowed to type (see chat: "first
-  // upload video, write prompt ... then pipeline starts actioning").
+  // wait for a spinner before they're allowed to type.
   const promptQueue = useRef<string[]>([]);
 
   const busy = stage === "uploading" || stage === "extracting" || stage === "editing";
 
+  // --- Resizable panels -----------------------------------------------
+  function startResize(kind: "sidebar" | "program") {
+    return (e: React.MouseEvent) => {
+      e.preventDefault();
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const startSidebar = sidebarWidth;
+      const startProgram = programHeight;
+
+      function onMove(ev: MouseEvent) {
+        if (kind === "sidebar") {
+          const next = startSidebar - (ev.clientX - startX);
+          setSidebarWidth(Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, next)));
+        } else {
+          const next = startProgram + (ev.clientY - startY);
+          setProgramHeight(Math.max(MIN_PROGRAM_HEIGHT, next));
+        }
+      }
+      function onUp() {
+        window.removeEventListener("mousemove", onMove);
+        window.removeEventListener("mouseup", onUp);
+      }
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mouseup", onUp);
+    };
+  }
+
+  // --- Extraction --------------------------------------------------------
   async function runExtraction(video_id: string, job_id: string) {
     setStage("extracting");
-    setStatusText("Extracting (transcript, scenes, silence)...");
+    setProgressText("Starting...");
     try {
-      const job = await pollJob(job_id, (j) => setStatusText(`Extraction: ${j.status}`));
+      const job = await pollJob(job_id, async (j) => {
+        setProgressText(j.progress || `Extraction: ${j.status}`);
+        // Live partial timeline — segments appear as each shot finishes
+        // being analyzed instead of a blank screen until everything's done.
+        const partial = await getTimelineIfReady(video_id);
+        if (partial) setTimeline(partial);
+      });
       if (job.status === "failed") {
         setMessages((m) => [
           ...m,
@@ -50,14 +92,13 @@ export default function Home() {
           },
         ]);
         setStage("extraction_failed");
-        setStatusText("Extraction failed.");
+        setProgressText("Extraction failed.");
         return;
       }
-      const tl = await getTimeline(video_id);
-      setTimeline(tl);
+      const tl = await getTimelineIfReady(video_id);
+      if (tl) setTimeline(tl);
       setStage("ready");
-      setStatusText("");
-      // Drain any prompts queued while we were extracting, in order.
+      setProgressText("");
       const queued = promptQueue.current;
       promptQueue.current = [];
       for (const p of queued) await runEdit(video_id, p);
@@ -72,12 +113,12 @@ export default function Home() {
         { role: "error", text: String(e), onRetry: () => retryExtractionFlow(video_id) },
       ]);
       setStage("extraction_failed");
-      setStatusText("Extraction failed.");
+      setProgressText("Extraction failed.");
     }
   }
 
   async function retryExtractionFlow(video_id: string) {
-    setStatusText("Retrying extraction...");
+    setProgressText("Retrying extraction...");
     try {
       const { job_id } = await retryExtraction(video_id);
       await runExtraction(video_id, job_id);
@@ -87,7 +128,7 @@ export default function Home() {
         { role: "error", text: String(e), onRetry: () => retryExtractionFlow(video_id) },
       ]);
       setStage("extraction_failed");
-      setStatusText("Extraction failed.");
+      setProgressText("Extraction failed.");
     }
   }
 
@@ -97,7 +138,7 @@ export default function Home() {
     setMessages([]);
     promptQueue.current = [];
     setStage("uploading");
-    setStatusText("Uploading...");
+    setProgressText("Uploading...");
     try {
       const { video_id, job_id } = await uploadVideo(file);
       setVideoId(video_id);
@@ -105,15 +146,17 @@ export default function Home() {
     } catch (e) {
       setMessages([{ role: "error", text: String(e) }]);
       setStage("extraction_failed");
-      setStatusText("Upload failed.");
+      setProgressText("Upload failed.");
     }
   }
 
+  // --- Edits ---------------------------------------------------------------
   async function runEdit(video_id: string, prompt: string) {
     setStage("editing");
+    setProgressText("Parsing intent...");
     try {
       const { job_id } = await submitEdit(video_id, prompt);
-      const job = await pollJob(job_id, (j) => setStatusText(`Edit: ${j.status}`));
+      const job = await pollJob(job_id, (j) => setProgressText(j.progress || `Edit: ${j.status}`));
       if (job.status === "failed") {
         setMessages((m) => [
           ...m,
@@ -124,20 +167,20 @@ export default function Home() {
           },
         ]);
         setStage("ready");
-        setStatusText("Edit failed.");
+        setProgressText("Edit failed.");
         return;
       }
       setPreviewUrl(outputUrl(job.job_id));
       setMessages((m) => [...m, { role: "assistant", text: job.edl?.summary || "Edit applied." }]);
       setStage("ready");
-      setStatusText("");
+      setProgressText("");
     } catch (e) {
       setMessages((m) => [
         ...m,
         { role: "error", text: String(e), onRetry: () => runEdit(video_id, prompt) },
       ]);
       setStage("ready");
-      setStatusText("Edit failed.");
+      setProgressText("Edit failed.");
     }
   }
 
@@ -147,10 +190,10 @@ export default function Home() {
       { role: "user", text: `Manually delete ${start.toFixed(1)}s – ${end.toFixed(1)}s` },
     ]);
     setStage("editing");
-    setStatusText("Applying manual trim...");
+    setProgressText("Applying manual trim...");
     try {
       const { job_id } = await manualEdit(video_id, [{ start, end }]);
-      const job = await pollJob(job_id, (j) => setStatusText(`Manual trim: ${j.status}`));
+      const job = await pollJob(job_id, (j) => setProgressText(j.progress || `Manual trim: ${j.status}`));
       if (job.status === "failed") {
         setMessages((m) => [
           ...m,
@@ -161,20 +204,20 @@ export default function Home() {
           },
         ]);
         setStage("ready");
-        setStatusText("Manual trim failed.");
+        setProgressText("Manual trim failed.");
         return;
       }
       setPreviewUrl(outputUrl(job.job_id));
       setMessages((m) => [...m, { role: "assistant", text: job.edl?.summary || "Manual trim applied." }]);
       setStage("ready");
-      setStatusText("");
+      setProgressText("");
     } catch (e) {
       setMessages((m) => [
         ...m,
         { role: "error", text: String(e), onRetry: () => handleManualDelete(video_id, start, end) },
       ]);
       setStage("ready");
-      setStatusText("Manual trim failed.");
+      setProgressText("Manual trim failed.");
     }
   }
 
@@ -199,10 +242,7 @@ export default function Home() {
   return (
     <div className="flex h-screen flex-col bg-neutral-950 text-neutral-100">
       <header className="flex items-center justify-between border-b border-neutral-800 px-4 py-2.5">
-        <div>
-          <h1 className="text-sm font-semibold">AI Trim Engine</h1>
-          {statusText && <p className="text-xs text-neutral-500">{statusText}</p>}
-        </div>
+        <h1 className="text-sm font-semibold">AI Trim Engine</h1>
         <div>
           <input
             ref={fileInputRef}
@@ -224,9 +264,19 @@ export default function Home() {
         </div>
       </header>
 
+      {progressText && (
+        <div className="flex items-center gap-2 border-b border-sky-900 bg-sky-950/60 px-4 py-2 text-xs text-sky-200">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-sky-400" />
+          {progressText}
+        </div>
+      )}
+
       <div className="flex flex-1 overflow-hidden">
         <main className="flex flex-1 flex-col overflow-y-auto p-4">
-          <div className="flex flex-1 flex-col overflow-hidden rounded-lg border border-neutral-800 bg-neutral-950">
+          <div
+            style={{ height: programHeight }}
+            className="flex shrink-0 flex-col overflow-hidden rounded-lg border border-neutral-800 bg-neutral-950"
+          >
             <div className="border-b border-neutral-800 px-3 py-1.5">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
                 Program
@@ -239,7 +289,7 @@ export default function Home() {
                   src={previewUrl}
                   controls
                   onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
-                  className="max-h-[60vh] w-full"
+                  className="max-h-full w-full"
                 />
               ) : (
                 <p className="text-sm text-neutral-500">Upload a video to preview it here.</p>
@@ -247,9 +297,19 @@ export default function Home() {
             </div>
           </div>
 
+          {videoId && (
+            <div
+              onMouseDown={startResize("program")}
+              className="my-1 flex h-2 shrink-0 cursor-row-resize items-center justify-center"
+              title="Drag to resize"
+            >
+              <div className="h-1 w-10 rounded-full bg-neutral-700" />
+            </div>
+          )}
+
           {videoId && !timeline && (
-            <div className="mt-3 flex h-[124px] flex-col items-center justify-center rounded-lg border border-neutral-800 bg-neutral-950 text-xs text-neutral-500">
-              {stage === "extraction_failed" ? "Extraction failed — see chat for details." : "Processing timeline..."}
+            <div className="mt-2 flex h-[124px] flex-col items-center justify-center rounded-lg border border-neutral-800 bg-neutral-950 text-xs text-neutral-500">
+              {stage === "extraction_failed" ? "Extraction failed — see chat for details." : "Starting up..."}
             </div>
           )}
           {timeline && videoId && (
@@ -264,7 +324,13 @@ export default function Home() {
           )}
         </main>
 
-        <div className="w-[340px] shrink-0">
+        <div
+          onMouseDown={startResize("sidebar")}
+          className="w-1.5 shrink-0 cursor-col-resize bg-neutral-900 hover:bg-neutral-700"
+          title="Drag to resize"
+        />
+
+        <div style={{ width: sidebarWidth }} className="shrink-0">
           <ChatPanel messages={messages} busy={busy} disabled={!videoId} onSend={handleSend} />
         </div>
       </div>

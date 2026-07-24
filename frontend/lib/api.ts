@@ -33,6 +33,7 @@ export interface JobStatus {
   video_id: string;
   kind: "extraction" | "edit";
   status: "pending" | "running" | "done" | "failed";
+  progress: string | null;
   error: string | null;
   intent: Intent | null;
   edl: EDL | null;
@@ -107,6 +108,15 @@ export async function manualEdit(
 
 export async function getTimeline(videoId: string): Promise<Timeline> {
   const resp = await fetch(`${API_BASE}/videos/${videoId}/timeline`);
+  return asJson(resp);
+}
+
+/** Same as getTimeline, but returns null instead of throwing if the timeline
+ * isn't written yet (used while polling mid-extraction — the file doesn't
+ * exist for the first moment before the first progress callback fires). */
+export async function getTimelineIfReady(videoId: string): Promise<Timeline | null> {
+  const resp = await fetch(`${API_BASE}/videos/${videoId}/timeline`);
+  if (resp.status === 404) return null;
   return asJson(resp);
 }
 

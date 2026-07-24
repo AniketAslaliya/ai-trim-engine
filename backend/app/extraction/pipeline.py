@@ -10,9 +10,11 @@ blank "processing..." screen for a multi-minute video is a real reason
 people abandon the app before it ever produces anything.
 """
 import subprocess
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Callable, Optional
 
 from app import config
+from app.extraction.retakes import mark_retakes
 from app.extraction.scenes import detect_shots
 from app.extraction.silence import detect_silence
 from app.extraction.transcribe import transcribe
@@ -76,30 +78,55 @@ def build_timeline(video_id: str, video_path: str, on_progress: Optional[Progres
 
     report("Detecting scene changes...")
     shots = detect_shots(video_path)
-
-    segments: list[Segment] = []
-    seg_id = 0
     total_shots = len(shots)
-    for i, (shot_start, shot_end) in enumerate(shots):
-        report(f"Analyzing shot {i + 1}/{total_shots}...", segments)
-        scene_tags, objects = tag_shot(video_path, shot_start, shot_end)
+
+    # Segment skeletons are cheap/local — build all of them up front, then
+    # only the per-shot LLM tagging calls need to run concurrently below.
+    seg_id = 0
+    shot_specs: list[list[dict]] = []
+    for shot_start, shot_end in shots:
+        specs = []
         for sub_start, sub_end, is_silence in _split_shot_by_silence(shot_start, shot_end, silences):
             seg_words = [] if is_silence else _words_in(words, sub_start, sub_end)
             transcript = " ".join(w.text for w in seg_words)
             filler = [w for w in seg_words if w.text.lower().strip(".,!?") in config.FILLER_WORDS]
-            segments.append(Segment(
-                id=seg_id,
-                start=sub_start,
-                end=sub_end,
-                transcript=transcript,
-                words=seg_words,
-                is_silence=is_silence,
-                shot_boundary=(sub_start == shot_start),
-                scene_tags=scene_tags,
-                objects=objects,
-                filler_words=filler,
+            specs.append(dict(
+                id=seg_id, start=sub_start, end=sub_end, transcript=transcript,
+                words=seg_words, is_silence=is_silence,
+                shot_boundary=(sub_start == shot_start), filler_words=filler,
             ))
             seg_id += 1
-        report(f"Analyzed shot {i + 1}/{total_shots}", segments)
+        shot_specs.append(specs)
 
-    return Timeline(video_id=video_id, duration_sec=duration, segments=segments)
+    def segments_so_far(tags_by_shot: list[Optional[tuple[list[str], list[str], list[str]]]]) -> list[Segment]:
+        out = []
+        for specs, tags in zip(shot_specs, tags_by_shot):
+            if tags is None:
+                continue
+            scene_tags, objects, action_tags = tags
+            out.extend(
+                Segment(scene_tags=scene_tags, objects=objects, action_tags=action_tags, **spec)
+                for spec in specs
+            )
+        return out
+
+    report(f"Analyzing {total_shots} shot(s)...")
+    tags_by_shot: list[Optional[tuple[list[str], list[str], list[str]]]] = [None] * total_shots
+    completed = 0
+    with ThreadPoolExecutor(max_workers=config.VISUAL_TAG_CONCURRENCY) as pool:
+        future_to_idx = {
+            pool.submit(tag_shot, video_path, s, e): i
+            for i, (s, e) in enumerate(shots)
+        }
+        for future in as_completed(future_to_idx):
+            idx = future_to_idx[future]
+            try:
+                tags_by_shot[idx] = future.result()
+            except Exception:
+                tags_by_shot[idx] = ([], [], [])  # degrade gracefully, never fail the whole run
+            completed += 1
+            report(f"Analyzed shot {completed}/{total_shots}...", segments_so_far(tags_by_shot))
+
+    final_segments = segments_so_far(tags_by_shot)
+    mark_retakes(final_segments)
+    return Timeline(video_id=video_id, duration_sec=duration, segments=final_segments)

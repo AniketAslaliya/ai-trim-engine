@@ -1,0 +1,3046 @@
+{
+  "video_id": "eval-real",
+  "duration_sec": 177.383333,
+  "segments": [
+    {
+      "id": 0,
+      "start": 0.0,
+      "end": 2.619083,
+      "transcript": "",
+      "words": [],
+      "speaker": null,
+      "is_silence": true,
+      "shot_boundary": true,
+      "scene_tags": [
+        "website",
+        "browser",
+        "landing page"
+      ],
+      "objects": [
+        "computer screen",
+        "browser window",
+        "mouse pointer",
+        "button",
+        "text"
+      ],
+      "audio_events": [],
+      "action_tags": [
+        "browsing",
+        "viewing website"
+      ],
+      "filler_words": [],
+      "is_duplicate_take": false
+    },
+    {
+      "id": 1,
+      "start": 2.619083,
+      "end": 9.246479,
+      "transcript": "so during the hackathon i build we can build her so let me introduce why i choose this topic",
+      "words": [
+        {
+          "text": "so",
+          "start": 2.82,
+          "end": 3.02
+        },
+        {
+          "text": "during",
+          "start": 3.02,
+          "end": 3.3
+        },
+        {
+          "text": "the",
+          "start": 3.3,
+          "end": 3.56
+        },
+        {
+          "text": "hackathon",
+          "start": 3.56,
+          "end": 3.92
+        },
+        {
+          "text": "i",
+          "start": 3.92,
+          "end": 4.14
+        },
+        {
+          "text": "build",
+          "start": 4.14,
+          "end": 4.4
+        },
+        {
+          "text": "we",
+          "start": 4.4,
+          "end": 4.84
+        },
+        {
+          "text": "can",
+          "start": 4.84,
+          "end": 5.02
+        },
+        {
+          "text": "build",
+          "start": 5.02,
+          "end": 5.32
+        },
+        {
+          "text": "her",
+          "start": 5.32,
+          "end": 5.48
+        },
+        {
+          "text": "so",
+          "start": 5.48,
+          "end": 6.02
+        },
+        {
+          "text": "let",
+          "start": 6.02,
+          "end": 6.4
+        },
+        {
+          "text": "me",
+          "start": 6.4,
+          "end": 6.6
+        },
+        {
+          "text": "introduce",
+          "start": 6.6,
+          "end": 7.46
+        },
+        {
+          "text": "why",
+          "start": 7.46,
+          "end": 7.94
+        },
+        {
+          "text": "i",
+          "start": 7.94,
+          "end": 8.28
+        },
+        {
+          "text": "choose",
+          "start": 8.28,
+          "end": 8.58
+        },
+        {
+          "text": "this",
+          "start": 8.58,
+          "end": 8.8
+        },
+        {
+          "text": "topic",
+          "start": 8.8,
+          "end": 9.18
+        }
+      ],
+      "speaker": null,
+      "is_silence": false,
+      "shot_boundary": false,
+      "scene_tags": [
+        "website",
+        "browser",
+        "landing page"
+      ],
+      "objects": [
+        "computer screen",
+        "browser window",
+        "mouse pointer",
+        "button",
+        "text"
+      ],
+      "audio_events": [],
+      "action_tags": [
+        "browsing",
+        "viewing website"
+      ],
+      "filler_words": [],
+      "is_duplicate_take": false
+    },
+    {
+      "id": 2,
+      "start": 9.246479,
+      "end": 9.688083,
+      "transcript": "",
+      "words": [],
+      "speaker": null,
+      "is_silence": true,
+      "shot_boundary": false,
+      "scene_tags": [
+        "website",
+        "browser",
+        "landing page"
+      ],
+      "objects": [
+        "computer screen",
+        "browser window",
+        "mouse pointer",
+        "button",
+        "text"
+      ],
+      "audio_events": [],
+      "action_tags": [
+        "browsing",
+        "viewing website"
+      ],
+      "filler_words": [],
+      "is_duplicate_take": false
+    },
+    {
+      "id": 3,
+      "start": 9.688083,
+      "end": 84.764667,
+      "transcript": "i am spending my weekend over the past few years i was just thinking that this weekend could be productive with the community which is they wanted to do something so i build this concept and i just create a website for this and here what is unique thing so time every weekend into a building festival so every creator who is building some agent AI or AI agents or building some MCB servers or doing something else like building websites and a cool stuff like gold or new so i just want to create a hackathon which organized on every weekend but not just for the coding it also before the creative it also before the something else which is not related to tech on day yeah so it is a great opportunity for everyone so here i just use some random number and data so it is like steps how it follows join the festival first you have to sign up for this weekend build a wake weekend builder and then you have to build and create the AI tools or the amazing projects either you can perform solo or 15 and you can share your feedback you can get feedback",
+      "words": [
+        {
+          "text": "i",
+          "start": 10.38,
+          "end": 10.78
+        },
+        {
+          "text": "am",
+          "start": 10.78,
+          "end": 10.94
+        },
+        {
+          "text": "spending",
+          "start": 10.94,
+          "end": 11.28
+        },
+        {
+          "text": "my",
+          "start": 11.28,
+          "end": 11.48
+        },
+        {
+          "text": "weekend",
+          "start": 11.48,
+          "end": 11.8
+        },
+        {
+          "text": "over",
+          "start": 11.8,
+          "end": 12.14
+        },
+        {
+          "text": "the",
+          "start": 12.14,
+          "end": 12.38
+        },
+        {
+          "text": "past",
+          "start": 12.38,
+          "end": 12.68
+        },
+        {
+          "text": "few",
+          "start": 12.68,
+          "end": 12.94
+        },
+        {
+          "text": "years",
+          "start": 12.94,
+          "end": 13.3
+        },
+        {
+          "text": "i",
+          "start": 13.3,
+          "end": 13.82
+        },
+        {
+          "text": "was",
+          "start": 13.82,
+          "end": 13.98
+        },
+        {
+          "text": "just",
+          "start": 13.98,
+          "end": 14.08
+        },
+        {
+          "text": "thinking",
+          "start": 14.08,
+          "end": 14.44
+        },
+        {
+          "text": "that",
+          "start": 14.44,
+          "end": 14.8
+        },
+        {
+          "text": "this",
+          "start": 14.8,
+          "end": 15.42
+        },
+        {
+          "text": "weekend",
+          "start": 15.42,
+          "end": 15.66
+        },
+        {
+          "text": "could",
+          "start": 15.66,
+          "end": 15.86
+        },
+        {
+          "text": "be",
+          "start": 15.86,
+          "end": 16.02
+        },
+        {
+          "text": "productive",
+          "start": 16.02,
+          "end": 16.34
+        },
+        {
+          "text": "with",
+          "start": 16.34,
+          "end": 16.76
+        },
+        {
+          "text": "the",
+          "start": 16.76,
+          "end": 16.88
+        },
+        {
+          "text": "community",
+          "start": 16.88,
+          "end": 17.22
+        },
+        {
+          "text": "which",
+          "start": 17.22,
+          "end": 17.66
+        },
+        {
+          "text": "is",
+          "start": 17.66,
+          "end": 17.92
+        },
+        {
+          "text": "they",
+          "start": 17.92,
+          "end": 18.46
+        },
+        {
+          "text": "wanted",
+          "start": 18.46,
+          "end": 18.74
+        },
+        {
+          "text": "to",
+          "start": 18.74,
+          "end": 19.04
+        },
+        {
+          "text": "do",
+          "start": 19.04,
+          "end": 19.14
+        },
+        {
+          "text": "something",
+          "start": 19.14,
+          "end": 19.44
+        },
+        {
+          "text": "so",
+          "start": 19.44,
+          "end": 19.76
+        },
+        {
+          "text": "i",
+          "start": 19.76,
+          "end": 19.9
+        },
+        {
+          "text": "build",
+          "start": 19.9,
+          "end": 20.2
+        },
+        {
+          "text": "this",
+          "start": 20.2,
+          "end": 20.62
+        },
+        {
+          "text": "concept",
+          "start": 20.62,
+          "end": 21.06
+        },
+        {
+          "text": "and",
+          "start": 21.06,
+          "end": 21.36
+        },
+        {
+          "text": "i",
+          "start": 21.36,
+          "end": 21.6
+        },
+        {
+          "text": "just",
+          "start": 21.6,
+          "end": 22.46
+        },
+        {
+          "text": "create",
+          "start": 22.46,
+          "end": 22.86
+        },
+        {
+          "text": "a",
+          "start": 22.86,
+          "end": 23.52
+        },
+        {
+          "text": "website",
+          "start": 23.52,
+          "end": 24.28
+        },
+        {
+          "text": "for",
+          "start": 24.28,
+          "end": 24.56
+        },
+        {
+          "text": "this",
+          "start": 24.56,
+          "end": 24.88
+        },
+        {
+          "text": "and",
+          "start": 24.88,
+          "end": 25.32
+        },
+        {
+          "text": "here",
+          "start": 25.32,
+          "end": 26.08
+        },
+        {
+          "text": "what",
+          "start": 26.08,
+          "end": 26.62
+        },
+        {
+          "text": "is",
+          "start": 26.62,
+          "end": 26.78
+        },
+        {
+          "text": "unique",
+          "start": 26.78,
+          "end": 27.06
+        },
+        {
+          "text": "thing",
+          "start": 27.06,
+          "end": 27.38
+        },
+        {
+          "text": "so",
+          "start": 27.38,
+          "end": 27.6
+        },
+        {
+          "text": "time",
+          "start": 27.6,
+          "end": 27.92
+        },
+        {
+          "text": "every",
+          "start": 27.92,
+          "end": 28.28
+        },
+        {
+          "text": "weekend",
+          "start": 28.28,
+          "end": 28.62
+        },
+        {
+          "text": "into",
+          "start": 28.62,
+          "end": 28.98
+        },
+        {
+          "text": "a",
+          "start": 28.98,
+          "end": 29.14
+        },
+        {
+          "text": "building",
+          "start": 29.14,
+          "end": 29.36
+        },
+        {
+          "text": "festival",
+          "start": 29.36,
+          "end": 29.98
+        },
+        {
+          "text": "so",
+          "start": 29.98,
+          "end": 30.5
+        },
+        {
+          "text": "every",
+          "start": 30.5,
+          "end": 30.76
+        },
+        {
+          "text": "creator",
+          "start": 30.76,
+          "end": 31.34
+        },
+        {
+          "text": "who",
+          "start": 31.34,
+          "end": 31.62
+        },
+        {
+          "text": "is",
+          "start": 31.62,
+          "end": 31.84
+        },
+        {
+          "text": "building",
+          "start": 31.84,
+          "end": 32.58
+        },
+        {
+          "text": "some",
+          "start": 32.58,
+          "end": 32.92
+        },
+        {
+          "text": "agent",
+          "start": 32.92,
+          "end": 33.26
+        },
+        {
+          "text": "AI",
+          "start": 33.26,
+          "end": 33.7
+        },
+        {
+          "text": "or",
+          "start": 33.7,
+          "end": 34.12
+        },
+        {
+          "text": "AI",
+          "start": 34.12,
+          "end": 34.56
+        },
+        {
+          "text": "agents",
+          "start": 34.56,
+          "end": 35.0
+        },
+        {
+          "text": "or",
+          "start": 35.0,
+          "end": 35.32
+        },
+        {
+          "text": "building",
+          "start": 35.32,
+          "end": 35.78
+        },
+        {
+          "text": "some",
+          "start": 35.78,
+          "end": 36.06
+        },
+        {
+          "text": "MCB",
+          "start": 36.06,
+          "end": 36.48
+        },
+        {
+          "text": "servers",
+          "start": 36.48,
+          "end": 36.86
+        },
+        {
+          "text": "or",
+          "start": 36.86,
+          "end": 37.46
+        },
+        {
+          "text": "doing",
+          "start": 37.46,
+          "end": 37.64
+        },
+        {
+          "text": "something",
+          "start": 37.64,
+          "end": 38.02
+        },
+        {
+          "text": "else",
+          "start": 38.02,
+          "end": 38.3
+        },
+        {
+          "text": "like",
+          "start": 38.3,
+          "end": 38.52
+        },
+        {
+          "text": "building",
+          "start": 38.52,
+          "end": 38.8
+        },
+        {
+          "text": "websites",
+          "start": 38.8,
+          "end": 39.24
+        },
+        {
+          "text": "and",
+          "start": 39.24,
+          "end": 39.56
+        },
+        {
+          "text": "a",
+          "start": 39.56,
+          "end": 39.64
+        },
+        {
+          "text": "cool",
+          "start": 39.64,
+          "end": 39.8
+        },
+        {
+          "text": "stuff",
+          "start": 39.8,
+          "end": 40.1
+        },
+        {
+          "text": "like",
+          "start": 40.1,
+          "end": 40.36
+        },
+        {
+          "text": "gold",
+          "start": 40.36,
+          "end": 40.74
+        },
+        {
+          "text": "or",
+          "start": 40.74,
+          "end": 40.88
+        },
+        {
+          "text": "new",
+          "start": 40.88,
+          "end": 41.14
+        },
+        {
+          "text": "so",
+          "start": 41.14,
+          "end": 41.78
+        },
+        {
+          "text": "i",
+          "start": 41.78,
+          "end": 41.88
+        },
+        {
+          "text": "just",
+          "start": 41.88,
+          "end": 42.0
+        },
+        {
+          "text": "want",
+          "start": 42.0,
+          "end": 42.32
+        },
+        {
+          "text": "to",
+          "start": 42.32,
+          "end": 42.48
+        },
+        {
+          "text": "create",
+          "start": 42.48,
+          "end": 42.76
+        },
+        {
+          "text": "a",
+          "start": 42.76,
+          "end": 43.32
+        },
+        {
+          "text": "hackathon",
+          "start": 43.32,
+          "end": 43.8
+        },
+        {
+          "text": "which",
+          "start": 43.8,
+          "end": 44.26
+        },
+        {
+          "text": "organized",
+          "start": 44.26,
+          "end": 44.82
+        },
+        {
+          "text": "on",
+          "start": 44.82,
+          "end": 45.16
+        },
+        {
+          "text": "every",
+          "start": 45.16,
+          "end": 45.46
+        },
+        {
+          "text": "weekend",
+          "start": 45.46,
+          "end": 45.98
+        },
+        {
+          "text": "but",
+          "start": 45.98,
+          "end": 46.52
+        },
+        {
+          "text": "not",
+          "start": 46.52,
+          "end": 46.8
+        },
+        {
+          "text": "just",
+          "start": 46.8,
+          "end": 47.06
+        },
+        {
+          "text": "for",
+          "start": 47.06,
+          "end": 47.28
+        },
+        {
+          "text": "the",
+          "start": 47.28,
+          "end": 47.42
+        },
+        {
+          "text": "coding",
+          "start": 47.42,
+          "end": 47.78
+        },
+        {
+          "text": "it",
+          "start": 47.78,
+          "end": 48.42
+        },
+        {
+          "text": "also",
+          "start": 48.42,
+          "end": 48.96
+        },
+        {
+          "text": "before",
+          "start": 48.96,
+          "end": 49.42
+        },
+        {
+          "text": "the",
+          "start": 49.42,
+          "end": 49.72
+        },
+        {
+          "text": "creative",
+          "start": 49.72,
+          "end": 50.1
+        },
+        {
+          "text": "it",
+          "start": 50.1,
+          "end": 50.54
+        },
+        {
+          "text": "also",
+          "start": 50.54,
+          "end": 50.9
+        },
+        {
+          "text": "before",
+          "start": 50.9,
+          "end": 51.28
+        },
+        {
+          "text": "the",
+          "start": 51.28,
+          "end": 51.6
+        },
+        {
+          "text": "something",
+          "start": 51.6,
+          "end": 52.3
+        },
+        {
+          "text": "else",
+          "start": 52.3,
+          "end": 52.7
+        },
+        {
+          "text": "which",
+          "start": 52.7,
+          "end": 53.22
+        },
+        {
+          "text": "is",
+          "start": 53.22,
+          "end": 53.4
+        },
+        {
+          "text": "not",
+          "start": 53.4,
+          "end": 53.62
+        },
+        {
+          "text": "related",
+          "start": 53.62,
+          "end": 54.12
+        },
+        {
+          "text": "to",
+          "start": 54.12,
+          "end": 54.38
+        },
+        {
+          "text": "tech",
+          "start": 54.38,
+          "end": 54.62
+        },
+        {
+          "text": "on",
+          "start": 54.62,
+          "end": 54.78
+        },
+        {
+          "text": "day",
+          "start": 54.78,
+          "end": 55.0
+        },
+        {
+          "text": "yeah",
+          "start": 55.0,
+          "end": 55.64
+        },
+        {
+          "text": "so",
+          "start": 55.64,
+          "end": 55.92
+        },
+        {
+          "text": "it",
+          "start": 55.92,
+          "end": 56.16
+        },
+        {
+          "text": "is",
+          "start": 56.16,
+          "end": 56.42
+        },
+        {
+          "text": "a",
+          "start": 56.42,
+          "end": 56.66
+        },
+        {
+          "text": "great",
+          "start": 56.66,
+          "end": 56.88
+        },
+        {
+          "text": "opportunity",
+          "start": 56.88,
+          "end": 57.28
+        },
+        {
+          "text": "for",
+          "start": 57.28,
+          "end": 57.72
+        },
+        {
+          "text": "everyone",
+          "start": 57.72,
+          "end": 58.02
+        },
+        {
+          "text": "so",
+          "start": 58.02,
+          "end": 58.76
+        },
+        {
+          "text": "here",
+          "start": 58.76,
+          "end": 59.04
+        },
+        {
+          "text": "i",
+          "start": 59.04,
+          "end": 59.46
+        },
+        {
+          "text": "just",
+          "start": 59.46,
+          "end": 60.76
+        },
+        {
+          "text": "use",
+          "start": 60.76,
+          "end": 60.96
+        },
+        {
+          "text": "some",
+          "start": 60.96,
+          "end": 61.26
+        },
+        {
+          "text": "random",
+          "start": 61.26,
+          "end": 61.48
+        },
+        {
+          "text": "number",
+          "start": 61.48,
+          "end": 61.88
+        },
+        {
+          "text": "and",
+          "start": 61.88,
+          "end": 62.1
+        },
+        {
+          "text": "data",
+          "start": 62.1,
+          "end": 62.38
+        },
+        {
+          "text": "so",
+          "start": 62.38,
+          "end": 63.06
+        },
+        {
+          "text": "it",
+          "start": 63.06,
+          "end": 63.36
+        },
+        {
+          "text": "is",
+          "start": 63.36,
+          "end": 63.54
+        },
+        {
+          "text": "like",
+          "start": 63.54,
+          "end": 63.72
+        },
+        {
+          "text": "steps",
+          "start": 63.72,
+          "end": 64.66
+        },
+        {
+          "text": "how",
+          "start": 64.66,
+          "end": 65.5
+        },
+        {
+          "text": "it",
+          "start": 65.5,
+          "end": 65.64
+        },
+        {
+          "text": "follows",
+          "start": 65.64,
+          "end": 65.92
+        },
+        {
+          "text": "join",
+          "start": 65.92,
+          "end": 66.28
+        },
+        {
+          "text": "the",
+          "start": 66.28,
+          "end": 66.46
+        },
+        {
+          "text": "festival",
+          "start": 66.46,
+          "end": 66.92
+        },
+        {
+          "text": "first",
+          "start": 66.92,
+          "end": 67.26
+        },
+        {
+          "text": "you",
+          "start": 67.26,
+          "end": 67.42
+        },
+        {
+          "text": "have",
+          "start": 67.42,
+          "end": 67.54
+        },
+        {
+          "text": "to",
+          "start": 67.54,
+          "end": 67.66
+        },
+        {
+          "text": "sign",
+          "start": 67.66,
+          "end": 67.86
+        },
+        {
+          "text": "up",
+          "start": 67.86,
+          "end": 68.06
+        },
+        {
+          "text": "for",
+          "start": 68.06,
+          "end": 68.24
+        },
+        {
+          "text": "this",
+          "start": 68.24,
+          "end": 68.52
+        },
+        {
+          "text": "weekend",
+          "start": 68.52,
+          "end": 69.14
+        },
+        {
+          "text": "build",
+          "start": 69.14,
+          "end": 70.24
+        },
+        {
+          "text": "a",
+          "start": 70.24,
+          "end": 70.78
+        },
+        {
+          "text": "wake",
+          "start": 70.78,
+          "end": 70.96
+        },
+        {
+          "text": "weekend",
+          "start": 70.96,
+          "end": 72.0
+        },
+        {
+          "text": "builder",
+          "start": 72.0,
+          "end": 72.32
+        },
+        {
+          "text": "and",
+          "start": 72.32,
+          "end": 72.84
+        },
+        {
+          "text": "then",
+          "start": 72.84,
+          "end": 73.18
+        },
+        {
+          "text": "you",
+          "start": 73.18,
+          "end": 73.62
+        },
+        {
+          "text": "have",
+          "start": 73.62,
+          "end": 73.8
+        },
+        {
+          "text": "to",
+          "start": 73.8,
+          "end": 74.02
+        },
+        {
+          "text": "build",
+          "start": 74.02,
+          "end": 74.56
+        },
+        {
+          "text": "and",
+          "start": 74.56,
+          "end": 74.92
+        },
+        {
+          "text": "create",
+          "start": 74.92,
+          "end": 75.28
+        },
+        {
+          "text": "the",
+          "start": 75.28,
+          "end": 75.6
+        },
+        {
+          "text": "AI",
+          "start": 75.6,
+          "end": 75.88
+        },
+        {
+          "text": "tools",
+          "start": 75.88,
+          "end": 76.12
+        },
+        {
+          "text": "or",
+          "start": 76.12,
+          "end": 76.36
+        },
+        {
+          "text": "the",
+          "start": 76.36,
+          "end": 76.52
+        },
+        {
+          "text": "amazing",
+          "start": 76.52,
+          "end": 77.08
+        },
+        {
+          "text": "projects",
+          "start": 77.08,
+          "end": 77.86
+        },
+        {
+          "text": "either",
+          "start": 77.86,
+          "end": 78.48
+        },
+        {
+          "text": "you",
+          "start": 78.48,
+          "end": 78.64
+        },
+        {
+          "text": "can",
+          "start": 78.64,
+          "end": 78.82
+        },
+        {
+          "text": "perform",
+          "start": 78.82,
+          "end": 79.22
+        },
+        {
+          "text": "solo",
+          "start": 79.22,
+          "end": 79.7
+        },
+        {
+          "text": "or",
+          "start": 79.7,
+          "end": 80.22
+        },
+        {
+          "text": "15",
+          "start": 80.22,
+          "end": 80.48
+        },
+        {
+          "text": "and",
+          "start": 80.48,
+          "end": 81.92
+        },
+        {
+          "text": "you",
+          "start": 81.92,
+          "end": 82.14
+        },
+        {
+          "text": "can",
+          "start": 82.14,
+          "end": 82.3
+        },
+        {
+          "text": "share",
+          "start": 82.3,
+          "end": 82.52
+        },
+        {
+          "text": "your",
+          "start": 82.52,
+          "end": 82.72
+        },
+        {
+          "text": "feedback",
+          "start": 82.72,
+          "end": 83.0
+        },
+        {
+          "text": "you",
+          "start": 83.0,
+          "end": 83.68
+        },
+        {
+          "text": "can",
+          "start": 83.68,
+          "end": 83.88
+        },
+        {
+          "text": "get",
+          "start": 83.88,
+          "end": 84.22
+        },
+        {
+          "text": "feedback",
+          "start": 84.22,
+          "end": 84.68
+        }
+      ],
+      "speaker": null,
+      "is_silence": false,
+      "shot_boundary": false,
+      "scene_tags": [
+        "website",
+        "browser",
+        "landing page"
+      ],
+      "objects": [
+        "computer screen",
+        "browser window",
+        "mouse pointer",
+        "button",
+        "text"
+      ],
+      "audio_events": [],
+      "action_tags": [
+        "browsing",
+        "viewing website"
+      ],
+      "filler_words": [
+        {
+          "text": "like",
+          "start": 38.3,
+          "end": 38.52
+        },
+        {
+          "text": "like",
+          "start": 40.1,
+          "end": 40.36
+        },
+        {
+          "text": "like",
+          "start": 63.54,
+          "end": 63.72
+        }
+      ],
+      "is_duplicate_take": false
+    },
+    {
+      "id": 4,
+      "start": 84.764667,
+      "end": 85.171437,
+      "transcript": "",
+      "words": [],
+      "speaker": null,
+      "is_silence": true,
+      "shot_boundary": false,
+      "scene_tags": [
+        "website",
+        "browser",
+        "landing page"
+      ],
+      "objects": [
+        "computer screen",
+        "browser window",
+        "mouse pointer",
+        "button",
+        "text"
+      ],
+      "audio_events": [],
+      "action_tags": [
+        "browsing",
+        "viewing website"
+      ],
+      "filler_words": [],
+      "is_duplicate_take": false
+    },
+    {
+      "id": 5,
+      "start": 85.171437,
+      "end": 110.833333,
+      "transcript": "is really great if you build something then the 10 and 1000s of people will give you a app and you can also be a big prizes okay so this is the project like i just added some reference projects like AI recipe generator we can create something like this or smart study planner or something like more music character so yeah this is the idea behind it so i",
+      "words": [
+        {
+          "text": "is",
+          "start": 85.24,
+          "end": 85.4
+        },
+        {
+          "text": "really",
+          "start": 85.4,
+          "end": 85.72
+        },
+        {
+          "text": "great",
+          "start": 85.72,
+          "end": 85.96
+        },
+        {
+          "text": "if",
+          "start": 85.96,
+          "end": 86.24
+        },
+        {
+          "text": "you",
+          "start": 86.24,
+          "end": 86.32
+        },
+        {
+          "text": "build",
+          "start": 86.32,
+          "end": 86.52
+        },
+        {
+          "text": "something",
+          "start": 86.52,
+          "end": 86.88
+        },
+        {
+          "text": "then",
+          "start": 86.88,
+          "end": 87.16
+        },
+        {
+          "text": "the",
+          "start": 87.16,
+          "end": 87.66
+        },
+        {
+          "text": "10",
+          "start": 87.66,
+          "end": 88.06
+        },
+        {
+          "text": "and",
+          "start": 88.06,
+          "end": 88.28
+        },
+        {
+          "text": "1000s",
+          "start": 88.28,
+          "end": 88.88
+        },
+        {
+          "text": "of",
+          "start": 88.88,
+          "end": 88.94
+        },
+        {
+          "text": "people",
+          "start": 88.94,
+          "end": 89.28
+        },
+        {
+          "text": "will",
+          "start": 89.28,
+          "end": 89.62
+        },
+        {
+          "text": "give",
+          "start": 89.62,
+          "end": 89.76
+        },
+        {
+          "text": "you",
+          "start": 89.76,
+          "end": 89.86
+        },
+        {
+          "text": "a",
+          "start": 89.86,
+          "end": 90.1
+        },
+        {
+          "text": "app",
+          "start": 90.1,
+          "end": 90.42
+        },
+        {
+          "text": "and",
+          "start": 90.42,
+          "end": 90.76
+        },
+        {
+          "text": "you",
+          "start": 90.76,
+          "end": 90.98
+        },
+        {
+          "text": "can",
+          "start": 90.98,
+          "end": 91.14
+        },
+        {
+          "text": "also",
+          "start": 91.14,
+          "end": 91.5
+        },
+        {
+          "text": "be",
+          "start": 91.5,
+          "end": 91.74
+        },
+        {
+          "text": "a",
+          "start": 91.74,
+          "end": 92.24
+        },
+        {
+          "text": "big",
+          "start": 92.24,
+          "end": 92.42
+        },
+        {
+          "text": "prizes",
+          "start": 92.42,
+          "end": 92.86
+        },
+        {
+          "text": "okay",
+          "start": 92.86,
+          "end": 93.72
+        },
+        {
+          "text": "so",
+          "start": 93.72,
+          "end": 93.98
+        },
+        {
+          "text": "this",
+          "start": 93.98,
+          "end": 94.22
+        },
+        {
+          "text": "is",
+          "start": 94.22,
+          "end": 94.38
+        },
+        {
+          "text": "the",
+          "start": 94.38,
+          "end": 94.54
+        },
+        {
+          "text": "project",
+          "start": 94.54,
+          "end": 94.88
+        },
+        {
+          "text": "like",
+          "start": 94.88,
+          "end": 95.18
+        },
+        {
+          "text": "i",
+          "start": 95.18,
+          "end": 95.72
+        },
+        {
+          "text": "just",
+          "start": 95.72,
+          "end": 95.96
+        },
+        {
+          "text": "added",
+          "start": 95.96,
+          "end": 96.62
+        },
+        {
+          "text": "some",
+          "start": 96.62,
+          "end": 96.9
+        },
+        {
+          "text": "reference",
+          "start": 96.9,
+          "end": 97.64
+        },
+        {
+          "text": "projects",
+          "start": 97.64,
+          "end": 98.3
+        },
+        {
+          "text": "like",
+          "start": 98.3,
+          "end": 98.84
+        },
+        {
+          "text": "AI",
+          "start": 98.84,
+          "end": 99.2
+        },
+        {
+          "text": "recipe",
+          "start": 99.2,
+          "end": 99.6
+        },
+        {
+          "text": "generator",
+          "start": 99.6,
+          "end": 100.04
+        },
+        {
+          "text": "we",
+          "start": 100.04,
+          "end": 100.74
+        },
+        {
+          "text": "can",
+          "start": 100.74,
+          "end": 100.98
+        },
+        {
+          "text": "create",
+          "start": 100.98,
+          "end": 101.42
+        },
+        {
+          "text": "something",
+          "start": 101.42,
+          "end": 101.84
+        },
+        {
+          "text": "like",
+          "start": 101.84,
+          "end": 102.1
+        },
+        {
+          "text": "this",
+          "start": 102.1,
+          "end": 102.38
+        },
+        {
+          "text": "or",
+          "start": 102.38,
+          "end": 103.12
+        },
+        {
+          "text": "smart",
+          "start": 103.12,
+          "end": 103.5
+        },
+        {
+          "text": "study",
+          "start": 103.5,
+          "end": 103.84
+        },
+        {
+          "text": "planner",
+          "start": 103.84,
+          "end": 104.3
+        },
+        {
+          "text": "or",
+          "start": 104.3,
+          "end": 104.84
+        },
+        {
+          "text": "something",
+          "start": 104.84,
+          "end": 105.36
+        },
+        {
+          "text": "like",
+          "start": 105.36,
+          "end": 105.6
+        },
+        {
+          "text": "more",
+          "start": 105.6,
+          "end": 105.94
+        },
+        {
+          "text": "music",
+          "start": 105.94,
+          "end": 106.3
+        },
+        {
+          "text": "character",
+          "start": 106.3,
+          "end": 106.76
+        },
+        {
+          "text": "so",
+          "start": 106.76,
+          "end": 107.56
+        },
+        {
+          "text": "yeah",
+          "start": 107.56,
+          "end": 107.88
+        },
+        {
+          "text": "this",
+          "start": 107.88,
+          "end": 108.26
+        },
+        {
+          "text": "is",
+          "start": 108.26,
+          "end": 108.46
+        },
+        {
+          "text": "the",
+          "start": 108.46,
+          "end": 108.76
+        },
+        {
+          "text": "idea",
+          "start": 108.76,
+          "end": 109.56
+        },
+        {
+          "text": "behind",
+          "start": 109.56,
+          "end": 109.92
+        },
+        {
+          "text": "it",
+          "start": 109.92,
+          "end": 110.26
+        },
+        {
+          "text": "so",
+          "start": 110.26,
+          "end": 110.66
+        },
+        {
+          "text": "i",
+          "start": 110.66,
+          "end": 110.76
+        }
+      ],
+      "speaker": null,
+      "is_silence": false,
+      "shot_boundary": false,
+      "scene_tags": [
+        "website",
+        "browser",
+        "landing page"
+      ],
+      "objects": [
+        "computer screen",
+        "browser window",
+        "mouse pointer",
+        "button",
+        "text"
+      ],
+      "audio_events": [],
+      "action_tags": [
+        "browsing",
+        "viewing website"
+      ],
+      "filler_words": [
+        {
+          "text": "like",
+          "start": 94.88,
+          "end": 95.18
+        },
+        {
+          "text": "like",
+          "start": 98.3,
+          "end": 98.84
+        },
+        {
+          "text": "like",
+          "start": 101.84,
+          "end": 102.1
+        },
+        {
+          "text": "like",
+          "start": 105.36,
+          "end": 105.6
+        }
+      ],
+      "is_duplicate_take": false
+    },
+    {
+      "id": 6,
+      "start": 110.833333,
+      "end": 112.966667,
+      "transcript": "different pages like here is the",
+      "words": [
+        {
+          "text": "different",
+          "start": 111.04,
+          "end": 111.46
+        },
+        {
+          "text": "pages",
+          "start": 111.46,
+          "end": 111.8
+        },
+        {
+          "text": "like",
+          "start": 111.8,
+          "end": 112.12
+        },
+        {
+          "text": "here",
+          "start": 112.12,
+          "end": 112.6
+        },
+        {
+          "text": "is",
+          "start": 112.6,
+          "end": 112.8
+        },
+        {
+          "text": "the",
+          "start": 112.8,
+          "end": 112.94
+        }
+      ],
+      "speaker": null,
+      "is_silence": false,
+      "shot_boundary": true,
+      "scene_tags": [
+        "browser",
+        "webpage",
+        "dark_mode"
+      ],
+      "objects": [
+        "cursor",
+        "event_card",
+        "navigation_bar",
+        "button"
+      ],
+      "audio_events": [],
+      "action_tags": [
+        "hovering"
+      ],
+      "filler_words": [
+        {
+          "text": "like",
+          "start": 111.8,
+          "end": 112.12
+        }
+      ],
+      "is_duplicate_take": false
+    },
+    {
+      "id": 7,
+      "start": 112.966667,
+      "end": 114.133333,
+      "transcript": "page where we can",
+      "words": [
+        {
+          "text": "page",
+          "start": 113.2,
+          "end": 113.5
+        },
+        {
+          "text": "where",
+          "start": 113.5,
+          "end": 113.72
+        },
+        {
+          "text": "we",
+          "start": 113.72,
+          "end": 113.92
+        },
+        {
+          "text": "can",
+          "start": 113.92,
+          "end": 114.08
+        }
+      ],
+      "speaker": null,
+      "is_silence": false,
+      "shot_boundary": true,
+      "scene_tags": [
+        "webpage",
+        "dashboard",
+        "indoor"
+      ],
+      "objects": [
+        "browser",
+        "card",
+        "button",
+        "image",
+        "text"
+      ],
+      "audio_events": [],
+      "action_tags": [
+        "browsing",
+        "reading"
+      ],
+      "filler_words": [],
+      "is_duplicate_take": false
+    },
+    {
+      "id": 8,
+      "start": 114.133333,
+      "end": 151.624458,
+      "transcript": "the different different hackathons which is we can filter by the categories like for the startups i have this for the health and wellness for the social impact for the no code tools and blockchain and web series so there are so many more we can add as per the requirements and as future we grow together okay so in the project in the AI builder part we just created something like if you want to build something so you can build here okay so this is really impactful and in a little part you can see your project ranking like according to the project for",
+      "words": [
+        {
+          "text": "the",
+          "start": 114.36,
+          "end": 114.58
+        },
+        {
+          "text": "different",
+          "start": 114.58,
+          "end": 115.02
+        },
+        {
+          "text": "different",
+          "start": 115.02,
+          "end": 115.26
+        },
+        {
+          "text": "hackathons",
+          "start": 115.26,
+          "end": 115.98
+        },
+        {
+          "text": "which",
+          "start": 115.98,
+          "end": 116.76
+        },
+        {
+          "text": "is",
+          "start": 116.76,
+          "end": 117.36
+        },
+        {
+          "text": "we",
+          "start": 117.36,
+          "end": 117.52
+        },
+        {
+          "text": "can",
+          "start": 117.52,
+          "end": 117.68
+        },
+        {
+          "text": "filter",
+          "start": 117.68,
+          "end": 117.96
+        },
+        {
+          "text": "by",
+          "start": 117.96,
+          "end": 118.24
+        },
+        {
+          "text": "the",
+          "start": 118.24,
+          "end": 118.42
+        },
+        {
+          "text": "categories",
+          "start": 118.42,
+          "end": 118.84
+        },
+        {
+          "text": "like",
+          "start": 118.84,
+          "end": 119.38
+        },
+        {
+          "text": "for",
+          "start": 119.38,
+          "end": 119.82
+        },
+        {
+          "text": "the",
+          "start": 119.82,
+          "end": 119.96
+        },
+        {
+          "text": "startups",
+          "start": 119.96,
+          "end": 120.34
+        },
+        {
+          "text": "i",
+          "start": 120.34,
+          "end": 120.72
+        },
+        {
+          "text": "have",
+          "start": 120.72,
+          "end": 121.1
+        },
+        {
+          "text": "this",
+          "start": 121.1,
+          "end": 121.34
+        },
+        {
+          "text": "for",
+          "start": 121.34,
+          "end": 122.04
+        },
+        {
+          "text": "the",
+          "start": 122.04,
+          "end": 122.2
+        },
+        {
+          "text": "health",
+          "start": 122.2,
+          "end": 122.4
+        },
+        {
+          "text": "and",
+          "start": 122.4,
+          "end": 122.6
+        },
+        {
+          "text": "wellness",
+          "start": 122.6,
+          "end": 122.98
+        },
+        {
+          "text": "for",
+          "start": 122.98,
+          "end": 123.3
+        },
+        {
+          "text": "the",
+          "start": 123.3,
+          "end": 123.46
+        },
+        {
+          "text": "social",
+          "start": 123.46,
+          "end": 123.76
+        },
+        {
+          "text": "impact",
+          "start": 123.76,
+          "end": 124.2
+        },
+        {
+          "text": "for",
+          "start": 124.2,
+          "end": 124.54
+        },
+        {
+          "text": "the",
+          "start": 124.54,
+          "end": 124.72
+        },
+        {
+          "text": "no",
+          "start": 124.72,
+          "end": 124.92
+        },
+        {
+          "text": "code",
+          "start": 124.92,
+          "end": 125.12
+        },
+        {
+          "text": "tools",
+          "start": 125.12,
+          "end": 125.5
+        },
+        {
+          "text": "and",
+          "start": 125.5,
+          "end": 126.22
+        },
+        {
+          "text": "blockchain",
+          "start": 126.22,
+          "end": 126.8
+        },
+        {
+          "text": "and",
+          "start": 126.8,
+          "end": 127.08
+        },
+        {
+          "text": "web",
+          "start": 127.08,
+          "end": 127.2
+        },
+        {
+          "text": "series",
+          "start": 127.2,
+          "end": 127.46
+        },
+        {
+          "text": "so",
+          "start": 127.46,
+          "end": 127.64
+        },
+        {
+          "text": "there",
+          "start": 127.64,
+          "end": 127.9
+        },
+        {
+          "text": "are",
+          "start": 127.9,
+          "end": 128.04
+        },
+        {
+          "text": "so",
+          "start": 128.04,
+          "end": 128.3
+        },
+        {
+          "text": "many",
+          "start": 128.3,
+          "end": 128.64
+        },
+        {
+          "text": "more",
+          "start": 128.64,
+          "end": 129.3
+        },
+        {
+          "text": "we",
+          "start": 129.3,
+          "end": 129.48
+        },
+        {
+          "text": "can",
+          "start": 129.48,
+          "end": 129.64
+        },
+        {
+          "text": "add",
+          "start": 129.64,
+          "end": 129.96
+        },
+        {
+          "text": "as",
+          "start": 129.96,
+          "end": 130.3
+        },
+        {
+          "text": "per",
+          "start": 130.3,
+          "end": 130.46
+        },
+        {
+          "text": "the",
+          "start": 130.46,
+          "end": 130.66
+        },
+        {
+          "text": "requirements",
+          "start": 130.66,
+          "end": 131.2
+        },
+        {
+          "text": "and",
+          "start": 131.2,
+          "end": 131.86
+        },
+        {
+          "text": "as",
+          "start": 131.86,
+          "end": 132.46
+        },
+        {
+          "text": "future",
+          "start": 132.46,
+          "end": 132.84
+        },
+        {
+          "text": "we",
+          "start": 132.84,
+          "end": 133.2
+        },
+        {
+          "text": "grow",
+          "start": 133.2,
+          "end": 133.56
+        },
+        {
+          "text": "together",
+          "start": 133.56,
+          "end": 134.0
+        },
+        {
+          "text": "okay",
+          "start": 134.0,
+          "end": 134.34
+        },
+        {
+          "text": "so",
+          "start": 134.34,
+          "end": 135.14
+        },
+        {
+          "text": "in",
+          "start": 135.14,
+          "end": 135.66
+        },
+        {
+          "text": "the",
+          "start": 135.66,
+          "end": 135.8
+        },
+        {
+          "text": "project",
+          "start": 135.8,
+          "end": 136.1
+        },
+        {
+          "text": "in",
+          "start": 136.1,
+          "end": 136.64
+        },
+        {
+          "text": "the",
+          "start": 136.64,
+          "end": 136.82
+        },
+        {
+          "text": "AI",
+          "start": 136.82,
+          "end": 137.06
+        },
+        {
+          "text": "builder",
+          "start": 137.06,
+          "end": 137.3
+        },
+        {
+          "text": "part",
+          "start": 137.3,
+          "end": 137.66
+        },
+        {
+          "text": "we",
+          "start": 137.66,
+          "end": 138.12
+        },
+        {
+          "text": "just",
+          "start": 138.12,
+          "end": 138.42
+        },
+        {
+          "text": "created",
+          "start": 138.42,
+          "end": 138.94
+        },
+        {
+          "text": "something",
+          "start": 138.94,
+          "end": 139.4
+        },
+        {
+          "text": "like",
+          "start": 139.4,
+          "end": 139.64
+        },
+        {
+          "text": "if",
+          "start": 139.64,
+          "end": 140.04
+        },
+        {
+          "text": "you",
+          "start": 140.04,
+          "end": 140.1
+        },
+        {
+          "text": "want",
+          "start": 140.1,
+          "end": 140.28
+        },
+        {
+          "text": "to",
+          "start": 140.28,
+          "end": 140.5
+        },
+        {
+          "text": "build",
+          "start": 140.5,
+          "end": 140.68
+        },
+        {
+          "text": "something",
+          "start": 140.68,
+          "end": 141.08
+        },
+        {
+          "text": "so",
+          "start": 141.08,
+          "end": 141.76
+        },
+        {
+          "text": "you",
+          "start": 141.76,
+          "end": 141.9
+        },
+        {
+          "text": "can",
+          "start": 141.9,
+          "end": 142.08
+        },
+        {
+          "text": "build",
+          "start": 142.08,
+          "end": 142.48
+        },
+        {
+          "text": "here",
+          "start": 142.48,
+          "end": 142.76
+        },
+        {
+          "text": "okay",
+          "start": 142.76,
+          "end": 143.3
+        },
+        {
+          "text": "so",
+          "start": 143.3,
+          "end": 143.78
+        },
+        {
+          "text": "this",
+          "start": 143.78,
+          "end": 144.12
+        },
+        {
+          "text": "is",
+          "start": 144.12,
+          "end": 144.4
+        },
+        {
+          "text": "really",
+          "start": 144.4,
+          "end": 144.9
+        },
+        {
+          "text": "impactful",
+          "start": 144.9,
+          "end": 145.58
+        },
+        {
+          "text": "and",
+          "start": 145.58,
+          "end": 145.84
+        },
+        {
+          "text": "in",
+          "start": 145.84,
+          "end": 146.16
+        },
+        {
+          "text": "a",
+          "start": 146.16,
+          "end": 146.32
+        },
+        {
+          "text": "little",
+          "start": 146.32,
+          "end": 146.5
+        },
+        {
+          "text": "part",
+          "start": 146.5,
+          "end": 146.96
+        },
+        {
+          "text": "you",
+          "start": 146.96,
+          "end": 147.62
+        },
+        {
+          "text": "can",
+          "start": 147.62,
+          "end": 147.78
+        },
+        {
+          "text": "see",
+          "start": 147.78,
+          "end": 148.04
+        },
+        {
+          "text": "your",
+          "start": 148.04,
+          "end": 148.36
+        },
+        {
+          "text": "project",
+          "start": 148.36,
+          "end": 148.96
+        },
+        {
+          "text": "ranking",
+          "start": 148.96,
+          "end": 149.4
+        },
+        {
+          "text": "like",
+          "start": 149.4,
+          "end": 149.8
+        },
+        {
+          "text": "according",
+          "start": 149.8,
+          "end": 150.26
+        },
+        {
+          "text": "to",
+          "start": 150.26,
+          "end": 150.56
+        },
+        {
+          "text": "the",
+          "start": 150.56,
+          "end": 150.7
+        },
+        {
+          "text": "project",
+          "start": 150.7,
+          "end": 151.08
+        },
+        {
+          "text": "for",
+          "start": 151.08,
+          "end": 151.4
+        }
+      ],
+      "speaker": null,
+      "is_silence": false,
+      "shot_boundary": true,
+      "scene_tags": [
+        "browser",
+        "webpage",
+        "software interface"
+      ],
+      "objects": [
+        "browser window",
+        "cursor",
+        "text box",
+        "buttons"
+      ],
+      "audio_events": [],
+      "action_tags": [
+        "web browsing"
+      ],
+      "filler_words": [
+        {
+          "text": "like",
+          "start": 118.84,
+          "end": 119.38
+        },
+        {
+          "text": "like",
+          "start": 139.4,
+          "end": 139.64
+        },
+        {
+          "text": "like",
+          "start": 149.4,
+          "end": 149.8
+        }
+      ],
+      "is_duplicate_take": false
+    },
+    {
+      "id": 9,
+      "start": 151.624458,
+      "end": 152.071396,
+      "transcript": "",
+      "words": [],
+      "speaker": null,
+      "is_silence": true,
+      "shot_boundary": false,
+      "scene_tags": [
+        "browser",
+        "webpage",
+        "software interface"
+      ],
+      "objects": [
+        "browser window",
+        "cursor",
+        "text box",
+        "buttons"
+      ],
+      "audio_events": [],
+      "action_tags": [
+        "web browsing"
+      ],
+      "filler_words": [],
+      "is_duplicate_take": false
+    },
+    {
+      "id": 10,
+      "start": 152.071396,
+      "end": 166.173167,
+      "transcript": "how did you do and all that so you can just check it out your rank among the people with currently or you can check your rank this year this month that overall ranking also",
+      "words": [
+        {
+          "text": "how",
+          "start": 152.62,
+          "end": 153.1
+        },
+        {
+          "text": "did",
+          "start": 153.1,
+          "end": 153.44
+        },
+        {
+          "text": "you",
+          "start": 153.44,
+          "end": 153.78
+        },
+        {
+          "text": "do",
+          "start": 153.78,
+          "end": 154.44
+        },
+        {
+          "text": "and",
+          "start": 154.44,
+          "end": 155.1
+        },
+        {
+          "text": "all",
+          "start": 155.1,
+          "end": 155.3
+        },
+        {
+          "text": "that",
+          "start": 155.3,
+          "end": 155.5
+        },
+        {
+          "text": "so",
+          "start": 155.5,
+          "end": 155.8
+        },
+        {
+          "text": "you",
+          "start": 155.8,
+          "end": 155.96
+        },
+        {
+          "text": "can",
+          "start": 155.96,
+          "end": 156.14
+        },
+        {
+          "text": "just",
+          "start": 156.14,
+          "end": 156.86
+        },
+        {
+          "text": "check",
+          "start": 156.86,
+          "end": 157.14
+        },
+        {
+          "text": "it",
+          "start": 157.14,
+          "end": 157.34
+        },
+        {
+          "text": "out",
+          "start": 157.34,
+          "end": 157.48
+        },
+        {
+          "text": "your",
+          "start": 157.48,
+          "end": 157.7
+        },
+        {
+          "text": "rank",
+          "start": 157.7,
+          "end": 158.04
+        },
+        {
+          "text": "among",
+          "start": 158.04,
+          "end": 158.46
+        },
+        {
+          "text": "the",
+          "start": 158.46,
+          "end": 158.64
+        },
+        {
+          "text": "people",
+          "start": 158.64,
+          "end": 158.96
+        },
+        {
+          "text": "with",
+          "start": 158.96,
+          "end": 159.78
+        },
+        {
+          "text": "currently",
+          "start": 159.78,
+          "end": 160.64
+        },
+        {
+          "text": "or",
+          "start": 160.64,
+          "end": 161.38
+        },
+        {
+          "text": "you",
+          "start": 161.38,
+          "end": 161.6
+        },
+        {
+          "text": "can",
+          "start": 161.6,
+          "end": 161.78
+        },
+        {
+          "text": "check",
+          "start": 161.78,
+          "end": 162.08
+        },
+        {
+          "text": "your",
+          "start": 162.08,
+          "end": 162.32
+        },
+        {
+          "text": "rank",
+          "start": 162.32,
+          "end": 162.56
+        },
+        {
+          "text": "this",
+          "start": 162.56,
+          "end": 162.88
+        },
+        {
+          "text": "year",
+          "start": 162.88,
+          "end": 163.12
+        },
+        {
+          "text": "this",
+          "start": 163.12,
+          "end": 163.4
+        },
+        {
+          "text": "month",
+          "start": 163.4,
+          "end": 163.66
+        },
+        {
+          "text": "that",
+          "start": 163.66,
+          "end": 163.92
+        },
+        {
+          "text": "overall",
+          "start": 163.92,
+          "end": 164.8
+        },
+        {
+          "text": "ranking",
+          "start": 164.8,
+          "end": 165.3
+        },
+        {
+          "text": "also",
+          "start": 165.3,
+          "end": 165.78
+        }
+      ],
+      "speaker": null,
+      "is_silence": false,
+      "shot_boundary": false,
+      "scene_tags": [
+        "browser",
+        "webpage",
+        "software interface"
+      ],
+      "objects": [
+        "browser window",
+        "cursor",
+        "text box",
+        "buttons"
+      ],
+      "audio_events": [],
+      "action_tags": [
+        "web browsing"
+      ],
+      "filler_words": [],
+      "is_duplicate_take": false
+    },
+    {
+      "id": 11,
+      "start": 166.173167,
+      "end": 166.575208,
+      "transcript": "",
+      "words": [],
+      "speaker": null,
+      "is_silence": true,
+      "shot_boundary": false,
+      "scene_tags": [
+        "browser",
+        "webpage",
+        "software interface"
+      ],
+      "objects": [
+        "browser window",
+        "cursor",
+        "text box",
+        "buttons"
+      ],
+      "audio_events": [],
+      "action_tags": [
+        "web browsing"
+      ],
+      "filler_words": [],
+      "is_duplicate_take": false
+    },
+    {
+      "id": 12,
+      "start": 166.575208,
+      "end": 168.828792,
+      "transcript": "you can have an option to sign in",
+      "words": [
+        {
+          "text": "you",
+          "start": 166.8,
+          "end": 166.96
+        },
+        {
+          "text": "can",
+          "start": 166.96,
+          "end": 167.12
+        },
+        {
+          "text": "have",
+          "start": 167.12,
+          "end": 167.44
+        },
+        {
+          "text": "an",
+          "start": 167.44,
+          "end": 167.62
+        },
+        {
+          "text": "option",
+          "start": 167.62,
+          "end": 167.9
+        },
+        {
+          "text": "to",
+          "start": 167.9,
+          "end": 168.14
+        },
+        {
+          "text": "sign",
+          "start": 168.14,
+          "end": 168.38
+        },
+        {
+          "text": "in",
+          "start": 168.38,
+          "end": 168.6
+        }
+      ],
+      "speaker": null,
+      "is_silence": false,
+      "shot_boundary": false,
+      "scene_tags": [
+        "browser",
+        "webpage",
+        "software interface"
+      ],
+      "objects": [
+        "browser window",
+        "cursor",
+        "text box",
+        "buttons"
+      ],
+      "audio_events": [],
+      "action_tags": [
+        "web browsing"
+      ],
+      "filler_words": [],
+      "is_duplicate_take": false
+    },
+    {
+      "id": 13,
+      "start": 168.828792,
+      "end": 169.890812,
+      "transcript": "",
+      "words": [],
+      "speaker": null,
+      "is_silence": true,
+      "shot_boundary": false,
+      "scene_tags": [
+        "browser",
+        "webpage",
+        "software interface"
+      ],
+      "objects": [
+        "browser window",
+        "cursor",
+        "text box",
+        "buttons"
+      ],
+      "audio_events": [],
+      "action_tags": [
+        "web browsing"
+      ],
+      "filler_words": [],
+      "is_duplicate_take": false
+    },
+    {
+      "id": 14,
+      "start": 169.890812,
+      "end": 173.147833,
+      "transcript": "get started so yeah this is my project",
+      "words": [
+        {
+          "text": "get",
+          "start": 170.16,
+          "end": 170.74
+        },
+        {
+          "text": "started",
+          "start": 170.74,
+          "end": 171.14
+        },
+        {
+          "text": "so",
+          "start": 171.14,
+          "end": 171.48
+        },
+        {
+          "text": "yeah",
+          "start": 171.48,
+          "end": 171.7
+        },
+        {
+          "text": "this",
+          "start": 171.7,
+          "end": 172.08
+        },
+        {
+          "text": "is",
+          "start": 172.08,
+          "end": 172.22
+        },
+        {
+          "text": "my",
+          "start": 172.22,
+          "end": 172.38
+        },
+        {
+          "text": "project",
+          "start": 172.38,
+          "end": 172.98
+        }
+      ],
+      "speaker": null,
+      "is_silence": false,
+      "shot_boundary": false,
+      "scene_tags": [
+        "browser",
+        "webpage",
+        "software interface"
+      ],
+      "objects": [
+        "browser window",
+        "cursor",
+        "text box",
+        "buttons"
+      ],
+      "audio_events": [],
+      "action_tags": [
+        "web browsing"
+      ],
+      "filler_words": [],
+      "is_duplicate_take": false
+    },
+    {
+      "id": 15,
+      "start": 173.147833,
+      "end": 173.609042,
+      "transcript": "",
+      "words": [],
+      "speaker": null,
+      "is_silence": true,
+      "shot_boundary": false,
+      "scene_tags": [
+        "browser",
+        "webpage",
+        "software interface"
+      ],
+      "objects": [
+        "browser window",
+        "cursor",
+        "text box",
+        "buttons"
+      ],
+      "audio_events": [],
+      "action_tags": [
+        "web browsing"
+      ],
+      "filler_words": [],
+      "is_duplicate_take": false
+    },
+    {
+      "id": 16,
+      "start": 173.609042,
+      "end": 174.76725,
+      "transcript": "you know",
+      "words": [
+        {
+          "text": "you",
+          "start": 173.72,
+          "end": 173.9
+        },
+        {
+          "text": "know",
+          "start": 173.9,
+          "end": 174.08
+        }
+      ],
+      "speaker": null,
+      "is_silence": false,
+      "shot_boundary": false,
+      "scene_tags": [
+        "browser",
+        "webpage",
+        "software interface"
+      ],
+      "objects": [
+        "browser window",
+        "cursor",
+        "text box",
+        "buttons"
+      ],
+      "audio_events": [],
+      "action_tags": [
+        "web browsing"
+      ],
+      "filler_words": [],
+      "is_duplicate_take": false
+    },
+    {
+      "id": 17,
+      "start": 174.76725,
+      "end": 175.605937,
+      "transcript": "",
+      "words": [],
+      "speaker": null,
+      "is_silence": true,
+      "shot_boundary": false,
+      "scene_tags": [
+        "browser",
+        "webpage",
+        "software interface"
+      ],
+      "objects": [
+        "browser window",
+        "cursor",
+        "text box",
+        "buttons"
+      ],
+      "audio_events": [],
+      "action_tags": [
+        "web browsing"
+      ],
+      "filler_words": [],
+      "is_duplicate_take": false
+    },
+    {
+      "id": 18,
+      "start": 175.605937,
+      "end": 175.782042,
+      "transcript": "",
+      "words": [],
+      "speaker": null,
+      "is_silence": false,
+      "shot_boundary": false,
+      "scene_tags": [
+        "browser",
+        "webpage",
+        "software interface"
+      ],
+      "objects": [
+        "browser window",
+        "cursor",
+        "text box",
+        "buttons"
+      ],
+      "audio_events": [],
+      "action_tags": [
+        "web browsing"
+      ],
+      "filler_words": [],
+      "is_duplicate_take": false
+    },
+    {
+      "id": 19,
+      "start": 175.782042,
+      "end": 176.5,
+      "transcript": "",
+      "words": [],
+      "speaker": null,
+      "is_silence": true,
+      "shot_boundary": false,
+      "scene_tags": [
+        "browser",
+        "webpage",
+        "software interface"
+      ],
+      "objects": [
+        "browser window",
+        "cursor",
+        "text box",
+        "buttons"
+      ],
+      "audio_events": [],
+      "action_tags": [
+        "web browsing"
+      ],
+      "filler_words": [],
+      "is_duplicate_take": false
+    },
+    {
+      "id": 20,
+      "start": 176.5,
+      "end": 176.595937,
+      "transcript": "",
+      "words": [],
+      "speaker": null,
+      "is_silence": true,
+      "shot_boundary": true,
+      "scene_tags": [
+        "desktop",
+        "software_interface",
+        "screen_recording"
+      ],
+      "objects": [
+        "obs_studio",
+        "windows_taskbar",
+        "audio_mixer"
+      ],
+      "audio_events": [],
+      "action_tags": [
+        "screen_sharing",
+        "recording",
+        "mouse_cursor"
+      ],
+      "filler_words": [],
+      "is_duplicate_take": false
+    },
+    {
+      "id": 21,
+      "start": 176.595937,
+      "end": 176.603146,
+      "transcript": "",
+      "words": [],
+      "speaker": null,
+      "is_silence": false,
+      "shot_boundary": false,
+      "scene_tags": [
+        "desktop",
+        "software_interface",
+        "screen_recording"
+      ],
+      "objects": [
+        "obs_studio",
+        "windows_taskbar",
+        "audio_mixer"
+      ],
+      "audio_events": [],
+      "action_tags": [
+        "screen_sharing",
+        "recording",
+        "mouse_cursor"
+      ],
+      "filler_words": [],
+      "is_duplicate_take": false
+    },
+    {
+      "id": 22,
+      "start": 176.603146,
+      "end": 177.365333,
+      "transcript": "",
+      "words": [],
+      "speaker": null,
+      "is_silence": true,
+      "shot_boundary": false,
+      "scene_tags": [
+        "desktop",
+        "software_interface",
+        "screen_recording"
+      ],
+      "objects": [
+        "obs_studio",
+        "windows_taskbar",
+        "audio_mixer"
+      ],
+      "audio_events": [],
+      "action_tags": [
+        "screen_sharing",
+        "recording",
+        "mouse_cursor"
+      ],
+      "filler_words": [],
+      "is_duplicate_take": false
+    },
+    {
+      "id": 23,
+      "start": 177.365333,
+      "end": 177.38333333333333,
+      "transcript": "",
+      "words": [],
+      "speaker": null,
+      "is_silence": false,
+      "shot_boundary": false,
+      "scene_tags": [
+        "desktop",
+        "software_interface",
+        "screen_recording"
+      ],
+      "objects": [
+        "obs_studio",
+        "windows_taskbar",
+        "audio_mixer"
+      ],
+      "audio_events": [],
+      "action_tags": [
+        "screen_sharing",
+        "recording",
+        "mouse_cursor"
+      ],
+      "filler_words": [],
+      "is_duplicate_take": false
+    }
+  ]
+}

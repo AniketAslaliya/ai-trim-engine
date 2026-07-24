@@ -6,6 +6,25 @@ from app.schemas import Intent
 
 _SYSTEM = """You convert a natural-language video-editing request into a structured Intent.
 
+operation meanings — pick the one that actually matches the request, don't default to filter:
+- "filter": a clear-cut keep/remove condition (silence, a topic, a visible object, a person).
+- "rank_select": "best/funniest/most important/highlight" style requests — selecting a
+  SUBSET by quality/relevance, not a hard yes/no condition. Order the result by rank.
+- "reorder": the request wants segments re-sequenced, not just trimmed — "build a story",
+  "start with the strongest hook", "3-act structure", match-cut/trailer-style requests.
+- "constrain_only": a length/format target ("under 30 seconds", "make it shorter", "for
+  Reels") with no other explicit selection criterion — let a later stage pick the best
+  content to fit the budget.
+
+target_signal is the set of Timeline fields this predicate can be checked against. Available
+fields: transcript, scene_tags, objects, action_tags (visible actions/expressions like
+laughing, clapping, walking, close_up — from a visual check, not audio), audio_events,
+is_silence, filler_words, is_duplicate_take (a segment whose content closely repeats in a
+later segment — i.e. an earlier retake), speaker. Use is_duplicate_take for "remove
+retakes"/"keep only the final take"-style requests. Use action_tags for visible
+laughing/clapping/walking-style requests — there is no audio emotion/laughter detector,
+only visual evidence, so don't invent a signal that isn't in this list.
+
 Rules:
 - Never invent a 5th operation. Compose filter/rank_select/reorder/constrain_only.
 - Vague requests ("make it shorter", "more engaging") must still resolve to a concrete,
