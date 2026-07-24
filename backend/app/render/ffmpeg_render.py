@@ -26,10 +26,14 @@ def _get_resolution(video_path: str) -> Optional[tuple[int, int]]:
         "-show_entries", "stream=width,height", "-of", "csv=s=x:p=0", video_path,
     ]
     out = subprocess.run(cmd, capture_output=True, text=True).stdout.strip()
-    if "x" not in out:
+    # ffprobe's csv writer appends a trailing separator regardless of which
+    # character is used as the delimiter (confirmed: "480x848x", and the same
+    # trailing-empty-field behavior with the default comma separator too) —
+    # filter empty parts instead of assuming exactly 2 fields come back.
+    parts = [p for p in out.split("x") if p]
+    if len(parts) < 2:
         return None
-    w, h = out.split("x")
-    return int(w), int(h)
+    return int(parts[0]), int(parts[1])
 
 
 def _crop_filter(src_w: int, src_h: int, aspect_ratio: str) -> Optional[str]:
