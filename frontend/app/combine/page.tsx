@@ -76,7 +76,7 @@ export default function CombinePage() {
     setStage("composing");
     setProgressText("Working out the sequence...");
     try {
-      const { job_id } = await composeVideos(readyVideos.map((v) => v.video_id), currentPrompt);
+      const { job_id } = await composeVideos(readyVideos.map((v) => v.video_id), currentPrompt, videoNames);
       const job = await pollJob(job_id, (j) => setProgressText(j.progress || j.status));
       if (job.status === "failed") {
         setMessages((m) => [...m, { role: "error", text: job.error || "Compose failed.", onRetry: () => runCompose(currentPrompt) }]);

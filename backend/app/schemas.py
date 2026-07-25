@@ -113,6 +113,12 @@ class ComposeRequest(BaseModel):
     natural-language description of the story/order (see compose.py)."""
     video_ids: list[str]
     prompt: str
+    # The frontend already knows each video's original display name (it's
+    # what the upload UI shows in the sidebar) — sending it here means name
+    # resolution doesn't depend on whether this exact video_id happened to be
+    # uploaded after backend name-persistence existed. Optional/defaulted so
+    # older frontend builds still work (falls back to the stored name.txt).
+    video_names: dict[str, str] = Field(default_factory=dict)
 
 
 class ComposeClipInput(BaseModel):

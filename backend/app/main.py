@@ -225,7 +225,7 @@ async def compose_videos(req: ComposeRequest, background_tasks: BackgroundTasks)
         except FileNotFoundError:
             raise HTTPException(404, f"timeline not ready for video_id {vid} — run extraction first")
 
-    video_names = {vid: _video_name(vid) for vid in req.video_ids}
+    video_names = {vid: req.video_names.get(vid) or _video_name(vid) for vid in req.video_ids}
 
     job = create_job(req.video_ids[0], kind="compose")
     background_tasks.add_task(_run_compose, job.job_id, req.video_ids, timelines, req.prompt, video_names)

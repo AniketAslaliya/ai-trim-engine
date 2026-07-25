@@ -149,12 +149,18 @@ export async function getKeepRanges(videoId: string): Promise<KeepRange[]> {
 }
 
 /** Combine several already-extracted videos into one sequence per a
- * natural-language description of the story/order — see backend/app/compose.py. */
-export async function composeVideos(videoIds: string[], prompt: string): Promise<{ job_id: string }> {
+ * natural-language description of the story/order — see backend/app/compose.py.
+ * videoNames lets the prompt refer to videos by their original filename
+ * ("combine video1.mp4 then video2.mp4") instead of the opaque video_id. */
+export async function composeVideos(
+  videoIds: string[],
+  prompt: string,
+  videoNames?: Record<string, string>
+): Promise<{ job_id: string }> {
   const resp = await fetch(`${API_BASE}/compose`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ video_ids: videoIds, prompt }),
+    body: JSON.stringify({ video_ids: videoIds, prompt, video_names: videoNames ?? {} }),
   });
   return asJson(resp);
 }
