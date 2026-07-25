@@ -180,10 +180,43 @@ def test_named_video_leading_silence_is_trimmed():
     assert beach_clips[0].start == 2.0 and beach_clips[0].end == 6.0
 
 
+def test_explicit_named_order_overrides_llm_mistake():
+    """Reproduces the exact reported bug: the user asks for video 1, then 2,
+    then 3, but the (small/fast) compose LLM returns them in a different
+    order anyway. The deterministic _enforce_named_order backstop must fix
+    this in code rather than depend on the LLM having honored the prompt."""
+    seg_1 = Segment(id=0, start=0.0, end=4.0, scene_tags=["a"])
+    seg_2 = Segment(id=0, start=0.0, end=3.0, scene_tags=["b"])
+    seg_3 = Segment(id=0, start=0.0, end=5.0, scene_tags=["c"])
+    tl_1 = Timeline(video_id="vid-1", duration_sec=4.0, segments=[seg_1])
+    tl_2 = Timeline(video_id="vid-2", duration_sec=3.0, segments=[seg_2])
+    tl_3 = Timeline(video_id="vid-3", duration_sec=5.0, segments=[seg_3])
+
+    # The LLM gets it wrong: 2, 1, 3 instead of the requested 1, 2, 3.
+    llm_response = {
+        "sequence": [
+            {"video_id": "vid-2", "segment_id": 0},
+            {"video_id": "vid-1", "segment_id": 0},
+            {"video_id": "vid-3", "segment_id": 0},
+        ],
+        "trim_leading_silence_video_ids": [],
+    }
+
+    with patch("app.compose.llm.complete_json", return_value=llm_response):
+        edl = compose_sequence(
+            "Use video 1 at the start, video 2 in the middle, and video 3 at the end.",
+            {"vid-1": tl_1, "vid-2": tl_2, "vid-3": tl_3},
+            video_names={"vid-1": "1.mp4", "vid-2": "2.mp4", "vid-3": "3.mp4"},
+        )
+
+    assert [c.video_id for c in edl.clips] == ["vid-1", "vid-2", "vid-3"]
+
+
 if __name__ == "__main__":
     test_merge_before_match_cut_search_range()
     test_match_cut_runs_after_merge_not_before()
     test_match_cut_search_widens_into_unselected_gap()
     test_weak_join_triggers_one_retry()
     test_named_video_leading_silence_is_trimmed()
+    test_explicit_named_order_overrides_llm_mistake()
     print("compose order tests passed")

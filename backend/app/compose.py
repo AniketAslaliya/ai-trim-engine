@@ -201,6 +201,47 @@ def _widen_join_bound(timeline: Optional[Timeline], clip: Clip, side: str) -> tu
     return (clip.start, clip.end)
 
 
+def _video_aliases(name: str) -> set[str]:
+    aliases = {name.lower()}
+    stem = name.rsplit(".", 1)[0].lower()
+    aliases.add(stem)
+    if stem.isdigit():
+        aliases.update({f"video {stem}", f"video{stem}", f"video number {stem}", f"video no {stem}"})
+    return aliases
+
+
+def _first_occurrence(prompt_lower: str, aliases: set[str]) -> Optional[int]:
+    positions = [prompt_lower.find(a) for a in aliases if prompt_lower.find(a) != -1]
+    return min(positions) if positions else None
+
+
+def _enforce_named_order(clips: list[Clip], prompt: str, video_names: dict[str, str]) -> list[Clip]:
+    """A deterministic backstop for explicit name-based ordering. The compose
+    LLM is already told an explicit order ("video 1 at the start, video 2 in
+    the middle") is a hard constraint (see _COMPOSE_PROMPT), but a small/fast
+    model doesn't reliably honor it in practice. If every video in the final
+    sequence is explicitly named/numbered somewhere in the instruction AND
+    the sequence already has exactly one contiguous clip per video (i.e. this
+    isn't an interleaved/story-reorder request the LLM deliberately built),
+    reorder the clips to match the order those names were mentioned in the
+    instruction text — overriding whatever order the LLM actually returned."""
+    distinct = list(dict.fromkeys(c.video_id for c in clips))
+    if len(distinct) != len(clips):
+        return clips  # a video appears more than once — interleaved/story sequence, don't force linear order
+
+    prompt_lower = prompt.lower()
+    ranks: dict[str, int] = {}
+    for vid in distinct:
+        if vid is None:
+            return clips
+        pos = _first_occurrence(prompt_lower, _video_aliases(video_names.get(vid, vid)))
+        if pos is None:
+            return clips  # not every video was explicitly named — too ambiguous to force an order
+        ranks[vid] = pos
+
+    return sorted(clips, key=lambda c: ranks[c.video_id])
+
+
 def _drop_leading_silence(clips: list[Clip], segments_by_key: dict[tuple[str, int], Segment]) -> list[Clip]:
     """Trims dead air at the very start of the composed output — the one
     silence-handling exception applied automatically regardless of the
@@ -422,6 +463,7 @@ def compose_sequence(
         raise ValueError("None of the selected segments were valid — try a different description.")
 
     clips = _merge_contiguous_clips(clips)
+    clips = _enforce_named_order(clips, prompt, video_names)
     clips = _drop_leading_silence(clips, segments_by_key)
     transitions, match_notes, weak_boundaries = _apply_match_cuts(clips, video_paths, segments_by_key, timelines)
 
@@ -431,6 +473,7 @@ def compose_sequence(
             revised_clips = _build_clips_from_sequence(revised_sequence, segments_by_key, trim_leading_ids)
             if revised_clips:
                 revised_clips = _merge_contiguous_clips(revised_clips)
+                revised_clips = _enforce_named_order(revised_clips, prompt, video_names)
                 revised_clips = _drop_leading_silence(revised_clips, segments_by_key)
                 revised_transitions, revised_notes, revised_weak = _apply_match_cuts(
                     revised_clips, video_paths, segments_by_key, timelines
