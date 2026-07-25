@@ -145,9 +145,45 @@ def test_weak_join_triggers_one_retry():
     assert edl.transitions[1].visual_score == 9  # adopted the retry's better result
 
 
+def test_named_video_leading_silence_is_trimmed():
+    """'Remove the initial silence from beach.mp4' must actually drop that
+    video's own leading silence segment, wherever it lands in the combined
+    order — resolved via the video_id<->filename mapping passed to the LLM,
+    executed deterministically rather than relying on the LLM to hand-filter
+    the segment list correctly on its own."""
+    seg_a_silence = Segment(id=0, start=0.0, end=2.0, is_silence=True)
+    seg_a_content = Segment(id=1, start=2.0, end=6.0, scene_tags=["beach"])
+    seg_b_content = Segment(id=0, start=0.0, end=5.0, scene_tags=["studio"])
+    tl_a = Timeline(video_id="vid-beach", duration_sec=6.0, segments=[seg_a_silence, seg_a_content])
+    tl_b = Timeline(video_id="vid-studio", duration_sec=5.0, segments=[seg_b_content])
+
+    llm_response = {
+        "sequence": [
+            {"video_id": "vid-studio", "segment_id": 0},
+            {"video_id": "vid-beach", "segment_id": 0},
+            {"video_id": "vid-beach", "segment_id": 1},
+        ],
+        "trim_leading_silence_video_ids": ["vid-beach"],
+    }
+
+    with patch("app.compose.llm.complete_json", return_value=llm_response):
+        edl = compose_sequence(
+            "combine studio.mp4 then beach.mp4, remove the initial silence from beach.mp4",
+            {"vid-beach": tl_a, "vid-studio": tl_b},
+            video_names={"vid-beach": "beach.mp4", "vid-studio": "studio.mp4"},
+        )
+
+    # The beach clip's own leading silence (segment_id 0, 0.0-2.0) must be gone —
+    # only its real content (2.0-6.0) should appear.
+    beach_clips = [c for c in edl.clips if c.video_id == "vid-beach"]
+    assert len(beach_clips) == 1
+    assert beach_clips[0].start == 2.0 and beach_clips[0].end == 6.0
+
+
 if __name__ == "__main__":
     test_merge_before_match_cut_search_range()
     test_match_cut_runs_after_merge_not_before()
     test_match_cut_search_widens_into_unselected_gap()
     test_weak_join_triggers_one_retry()
+    test_named_video_leading_silence_is_trimmed()
     print("compose order tests passed")

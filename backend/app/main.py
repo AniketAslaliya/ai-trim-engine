@@ -5,6 +5,7 @@ import json
 import shutil
 import traceback
 import uuid
+from pathlib import Path
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -42,6 +43,18 @@ def _video_path(video_id: str) -> str:
     return str(matches[0])
 
 
+def _video_name_path(video_id: str) -> Path:
+    return config.video_dir(video_id) / "name.txt"
+
+
+def _video_name(video_id: str) -> str:
+    """The original uploaded filename, so a compose prompt that refers to a
+    video by name ("start with beach.mp4") can be resolved back to its
+    video_id — video_id itself is an opaque uuid the user never sees."""
+    path = _video_name_path(video_id)
+    return path.read_text().strip() if path.exists() else video_id
+
+
 @app.post("/videos")
 async def upload_video(file: UploadFile, background_tasks: BackgroundTasks):
     video_id = str(uuid.uuid4())
@@ -49,6 +62,7 @@ async def upload_video(file: UploadFile, background_tasks: BackgroundTasks):
     dest = config.video_dir(video_id) / f"source{suffix}"
     with dest.open("wb") as f:
         shutil.copyfileobj(file.file, f)
+    _video_name_path(video_id).write_text(file.filename or video_id)
 
     job = create_job(video_id, kind="extraction")
     background_tasks.add_task(_run_extraction, job.job_id, video_id, str(dest))
@@ -211,12 +225,16 @@ async def compose_videos(req: ComposeRequest, background_tasks: BackgroundTasks)
         except FileNotFoundError:
             raise HTTPException(404, f"timeline not ready for video_id {vid} — run extraction first")
 
+    video_names = {vid: _video_name(vid) for vid in req.video_ids}
+
     job = create_job(req.video_ids[0], kind="compose")
-    background_tasks.add_task(_run_compose, job.job_id, req.video_ids, timelines, req.prompt)
+    background_tasks.add_task(_run_compose, job.job_id, req.video_ids, timelines, req.prompt, video_names)
     return {"job_id": job.job_id}
 
 
-def _run_compose(job_id: str, video_ids: list[str], timelines: dict[str, Timeline], prompt: str) -> None:
+def _run_compose(
+    job_id: str, video_ids: list[str], timelines: dict[str, Timeline], prompt: str, video_names: dict[str, str],
+) -> None:
     update_job(job_id, status="running", progress="Working out the sequence...")
     try:
         # Built up front (not just before render) so compose_sequence can run
@@ -224,7 +242,7 @@ def _run_compose(job_id: str, video_ids: list[str], timelines: dict[str, Timelin
         # tag-similarity heuristic — see match_cut.py.
         video_paths = {vid: _video_path(vid) for vid in video_ids}
 
-        edl = compose_sequence(prompt, timelines, video_paths)
+        edl = compose_sequence(prompt, timelines, video_paths, video_names)
         update_job(job_id, edl=edl, progress="Rendering...")
 
         # compose_sequence only resolves the sequence itself; format requests

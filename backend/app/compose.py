@@ -27,6 +27,11 @@ _COMPOSE_PROMPT = """You are combining segments from MULTIPLE videos into one se
 
 Instruction: {prompt}
 
+Videos in this request, by video_id and their ORIGINAL filename — the user's instruction will refer to
+videos by name (or a recognizable part of the filename), not by video_id, so use this mapping to resolve
+which video_id a name in the instruction refers to:
+{video_names_json}
+
 Segments from every video (each tagged with which video it came from, in is_silence: true/false — a
 segment with no speech can still be visually essential, e.g. a silent hand-movement shot; it is NOT
 pre-filtered out for you):
@@ -37,6 +42,18 @@ instruction is purely about ORDER or MATCH-CUTTING ("combine these into one sequ
 do not drop silent segments, "boring" segments, or anything else on your own initiative — include
 everything relevant to the requested story, in the requested order. Only exclude segments when the
 instruction explicitly asks for a removal (e.g. "cut the silences," "skip the boring parts").
+
+Ordering rule: if the instruction gives an explicit order or grouping by video name/description (e.g.
+"combine video1 then video2", "start with the beach clip, then the interview"), you MUST follow that exact
+order/grouping for those videos — never silently reorder or reinterpret it for "better story flow" unless
+the instruction itself also explicitly asks for restructuring (e.g. "build a 3-act story", "start with the
+strongest hook"). An explicit name-based order is a hard constraint, not a suggestion.
+
+Named per-video silence rule: if the instruction asks to remove/trim the initial or starting silence of a
+SPECIFIC named video (e.g. "remove the starting silence from beach.mp4"), exclude that video's own leading
+is_silence segment(s) — the ones at the very start of THAT video's own timeline (segment ids start at 0
+per video, is_silence true) — from the sequence, even though the instruction didn't ask to touch silence
+anywhere else. This is independent of whichever position that video ends up in the final combined order.
 
 Pick the segments to include, in the FINAL desired order — order matters, this is the actual output sequence.
 
@@ -56,6 +73,12 @@ before it. Do not sacrifice the user's actual instruction just to force a match 
 bonus when available, never a requirement that overrides what they asked for.
 
 Return the sequence as an array of {{"video_id": ..., "segment_id": ...}} objects, in final order.
+
+Also return trim_leading_silence_video_ids: the video_ids (from the mapping above) whose OWN starting/
+initial silence the instruction explicitly asked to remove by name (e.g. "remove the initial silence from
+beach.mp4"). Leave this empty unless the instruction names a specific video for this — it is applied
+deterministically afterward against that video's own leading silence, not something you need to hand-filter
+out of the segment list yourself.
 """
 
 _COMPOSE_SCHEMA = {
@@ -71,9 +94,10 @@ _COMPOSE_SCHEMA = {
                 },
                 "required": ["video_id", "segment_id"],
             },
-        }
+        },
+        "trim_leading_silence_video_ids": {"type": "array", "items": {"type": "string"}},
     },
-    "required": ["sequence"],
+    "required": ["sequence", "trim_leading_silence_video_ids"],
 }
 
 
@@ -273,14 +297,34 @@ Your previous sequence, in order:
 Joins that scored poorly (prev clip -> next clip, with the real visual score/reason):
 {weak_joins_json}
 
-Return a revised sequence in the same format as before.
+Return a revised sequence in the same format as before, including trim_leading_silence_video_ids
+unchanged from your previous answer unless this revision changes which video that applies to.
 """
 
 
-def _build_clips_from_sequence(sequence: list[dict], segments_by_key: dict[tuple[str, int], Segment]) -> list[Clip]:
+def _video_leading_silence_ids(segments: list[Segment]) -> set[int]:
+    """Same rule as resolve.py's _leading_silence_ids, duplicated here (not
+    imported) since compose operates per-video across several Timelines
+    rather than a single one — only a contiguous run of is_silence segments
+    starting at that video's own timeline beginning, never an interior gap."""
+    ids: set[int] = set()
+    for seg in sorted(segments, key=lambda s: s.start):
+        if not seg.is_silence:
+            break
+        ids.add(seg.id)
+    return ids
+
+
+def _build_clips_from_sequence(
+    sequence: list[dict],
+    segments_by_key: dict[tuple[str, int], Segment],
+    drop_ids: set[tuple[str, int]] | None = None,
+) -> list[Clip]:
     clips: list[Clip] = []
     for item in sequence:
         vid, sid = item["video_id"], item["segment_id"]
+        if drop_ids and (vid, sid) in drop_ids:
+            continue  # this video's own leading silence, explicitly asked to be trimmed by name
         seg = segments_by_key.get((vid, sid))
         if seg is None:
             continue  # LLM referenced something that doesn't exist — skip rather than fail the whole compose
@@ -315,7 +359,12 @@ def _retry_weak_joins(
         return None  # a failed retry just keeps the original result — never worse than not retrying
 
 
-def compose_sequence(prompt: str, timelines: dict[str, Timeline], video_paths: dict[str, str] | None = None) -> EDL:
+def compose_sequence(
+    prompt: str,
+    timelines: dict[str, Timeline],
+    video_paths: dict[str, str] | None = None,
+    video_names: dict[str, str] | None = None,
+) -> EDL:
     if not config.llm_configured():
         raise ValueError(
             "Combining multiple videos requires an LLM call to work out the sequence/story order — "
@@ -339,9 +388,13 @@ def compose_sequence(prompt: str, timelines: dict[str, Timeline], video_paths: d
     if not compact:
         raise ValueError("None of the provided videos have any content to combine.")
 
+    video_names = video_names or {vid: vid for vid in timelines}
     data = llm.complete_json(
         None,
-        _COMPOSE_PROMPT.format(prompt=prompt, segments_json=json.dumps(compact)),
+        _COMPOSE_PROMPT.format(
+            prompt=prompt, segments_json=json.dumps(compact),
+            video_names_json=json.dumps(video_names),
+        ),
         _COMPOSE_SCHEMA,
         max_tokens=2000,
     )
@@ -354,7 +407,17 @@ def compose_sequence(prompt: str, timelines: dict[str, Timeline], video_paths: d
 
     segments_by_key = {(vid, s.id): s for vid, tl in timelines.items() for s in tl.segments}
 
-    clips = _build_clips_from_sequence(sequence, segments_by_key)
+    # Named per-video silence trim: LLM only resolves WHICH video the instruction named
+    # (name matching is real language understanding); the actual trim is deterministic
+    # against that video's own timeline, same rule as resolve.py's leading-silence trim.
+    trim_leading_ids = {
+        (vid, sid)
+        for vid in data.get("trim_leading_silence_video_ids", [])
+        if vid in timelines
+        for sid in _video_leading_silence_ids(timelines[vid].segments)
+    }
+
+    clips = _build_clips_from_sequence(sequence, segments_by_key, trim_leading_ids)
     if not clips:
         raise ValueError("None of the selected segments were valid — try a different description.")
 
@@ -365,7 +428,7 @@ def compose_sequence(prompt: str, timelines: dict[str, Timeline], video_paths: d
     if weak_boundaries and video_paths:
         revised_sequence = _retry_weak_joins(prompt, compact, sequence, clips, transitions, weak_boundaries)
         if revised_sequence:
-            revised_clips = _build_clips_from_sequence(revised_sequence, segments_by_key)
+            revised_clips = _build_clips_from_sequence(revised_sequence, segments_by_key, trim_leading_ids)
             if revised_clips:
                 revised_clips = _merge_contiguous_clips(revised_clips)
                 revised_clips = _drop_leading_silence(revised_clips, segments_by_key)
