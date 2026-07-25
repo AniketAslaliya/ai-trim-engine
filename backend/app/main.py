@@ -259,20 +259,27 @@ async def compose_manual_edit(req: ComposeManualEditRequest, background_tasks: B
         raise HTTPException(400, "no clips provided")
 
     video_paths = {vid: _video_path(vid) for vid in req.video_ids}
+    timelines: dict[str, Timeline] = {}
+    for vid in req.video_ids:
+        try:
+            with open(_timeline_path(vid)) as f:
+                timelines[vid] = Timeline(**json.load(f))
+        except FileNotFoundError:
+            pass  # widening the match-cut search is a bonus, not required — manual edit still works without it
     job = create_job(req.video_ids[0], kind="compose")
     background_tasks.add_task(
-        _run_compose_manual, job.job_id, video_paths, req.clips, req.aspect_ratio, req.denoise_audio
+        _run_compose_manual, job.job_id, video_paths, timelines, req.clips, req.aspect_ratio, req.denoise_audio
     )
     return {"job_id": job.job_id}
 
 
 def _run_compose_manual(
-    job_id: str, video_paths: dict[str, str], clips_in, aspect_ratio: str | None, denoise: bool = False,
+    job_id: str, video_paths: dict[str, str], timelines: dict[str, Timeline], clips_in, aspect_ratio: str | None, denoise: bool = False,
 ) -> None:
     update_job(job_id, status="running", progress="Applying manual edit...")
     try:
         clip_tuples = [(c.video_id, c.start, c.end) for c in clips_in]
-        edl = build_manual_compose_edl(clip_tuples, video_paths)
+        edl = build_manual_compose_edl(clip_tuples, video_paths, timelines)
         update_job(job_id, edl=edl, progress="Rendering...")
 
         output_path = str(config.compose_dir() / f"{job_id}.mp4")

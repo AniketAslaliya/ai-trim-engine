@@ -49,6 +49,20 @@ def _filler_word_ranges(segments: list[Segment]) -> list[TimeRange]:
     return ranges
 
 
+def _leading_silence_ids(segments: list[Segment]) -> set[int]:
+    """Dead air at the very start of the video — trimmed automatically
+    regardless of what the prompt asked for, since it's standard editing
+    practice and not something a user should have to explicitly request.
+    Interior silence gaps are NEVER touched by this — only a contiguous run
+    of is_silence segments starting at the timeline's own beginning."""
+    ids: set[int] = set()
+    for seg in sorted(segments, key=lambda s: s.start):
+        if not seg.is_silence:
+            break
+        ids.add(seg.id)
+    return ids
+
+
 def _try_deterministic(intent: Intent, segments: list[Segment]) -> set[int] | None:
     signals = set(intent.target_signal)
 
@@ -242,6 +256,11 @@ def resolve(intent: Intent, timeline: Timeline) -> EDL:
         # non-match as a successful no-op edit. Let kept_ids stay empty so
         # the refusal below fires with an honest explanation instead.
         kept_ids = set(matched_ids)
+
+    if "is_silence" not in intent.target_signal:
+        # The request isn't about silence at all — leave every interior
+        # silence gap exactly as matched above, only drop leading dead air.
+        kept_ids -= _leading_silence_ids(segments)
 
     kept_ids_list = _apply_constraints(sorted(kept_ids), ranked_ids, segments, intent.constraints)
     kept_ids = set(kept_ids_list)
