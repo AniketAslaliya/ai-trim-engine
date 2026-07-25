@@ -18,6 +18,7 @@ boundary. Never removes/trims content beyond what the instruction asked for
 WHAT content is included.
 """
 import json
+import re
 from typing import Optional
 
 from app import config, llm, match_cut
@@ -242,6 +243,34 @@ def _enforce_named_order(clips: list[Clip], prompt: str, video_names: dict[str, 
     return sorted(clips, key=lambda c: ranks[c.video_id])
 
 
+# Keyword pairs that mark an explicit "remove this video's own starting
+# silence" instruction — both a silence word AND a leading-position word must
+# appear in the same clause, so "remove the silence" alone (interior, no
+# position implied) doesn't trigger this.
+_SILENCE_WORDS = ("silence", "silent", "dead air", "quiet")
+_LEADING_WORDS = ("start", "starting", "initial", "beginning", "intro", "leading", "opening")
+
+
+def _detect_named_silence_trim_targets(prompt: str, video_names: dict[str, str]) -> set[str]:
+    """Deterministically finds which videos the instruction explicitly asked
+    to have their OWN starting silence removed, by name — computed here
+    instead of trusting the compose LLM's trim_leading_silence_video_ids
+    field, which (like explicit ordering) a small/fast model doesn't reliably
+    populate even when the prompt says exactly this. Splits the prompt into
+    clauses so "combine video1 then video2, remove the starting silence from
+    video1" only flags video1, not every named video in the whole sentence."""
+    targets: set[str] = set()
+    for clause in re.split(r"[.,;]| and | but ", prompt.lower()):
+        if not any(w in clause for w in _SILENCE_WORDS):
+            continue
+        if not any(w in clause for w in _LEADING_WORDS):
+            continue
+        for vid, name in video_names.items():
+            if _first_occurrence(clause, _video_aliases(name)) is not None:
+                targets.add(vid)
+    return targets
+
+
 def _drop_leading_silence(clips: list[Clip], segments_by_key: dict[tuple[str, int], Segment]) -> list[Clip]:
     """Trims dead air at the very start of the composed output — the one
     silence-handling exception applied automatically regardless of the
@@ -448,13 +477,16 @@ def compose_sequence(
 
     segments_by_key = {(vid, s.id): s for vid, tl in timelines.items() for s in tl.segments}
 
-    # Named per-video silence trim: LLM only resolves WHICH video the instruction named
-    # (name matching is real language understanding); the actual trim is deterministic
-    # against that video's own timeline, same rule as resolve.py's leading-silence trim.
+    # Named per-video silence trim: computed deterministically from the prompt
+    # text (see _detect_named_silence_trim_targets) rather than trusting the
+    # LLM's own trim_leading_silence_video_ids field — that field is unioned
+    # in as extra signal, but a small/fast model doesn't reliably populate it
+    # even when the instruction says exactly this (same issue as ordering).
+    silence_trim_targets = _detect_named_silence_trim_targets(prompt, video_names)
+    silence_trim_targets.update(v for v in data.get("trim_leading_silence_video_ids", []) if v in timelines)
     trim_leading_ids = {
         (vid, sid)
-        for vid in data.get("trim_leading_silence_video_ids", [])
-        if vid in timelines
+        for vid in silence_trim_targets
         for sid in _video_leading_silence_ids(timelines[vid].segments)
     }
 

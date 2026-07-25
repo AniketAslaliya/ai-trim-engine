@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.compose import compose_sequence, _merge_contiguous_clips
+from app.compose import compose_sequence, _merge_contiguous_clips, _detect_named_silence_trim_targets
 from app.schemas import Clip, Segment, Timeline
 
 
@@ -145,12 +145,12 @@ def test_weak_join_triggers_one_retry():
     assert edl.transitions[1].visual_score == 9  # adopted the retry's better result
 
 
-def test_named_video_leading_silence_is_trimmed():
-    """'Remove the initial silence from beach.mp4' must actually drop that
-    video's own leading silence segment, wherever it lands in the combined
-    order — resolved via the video_id<->filename mapping passed to the LLM,
-    executed deterministically rather than relying on the LLM to hand-filter
-    the segment list correctly on its own."""
+def test_named_video_leading_silence_is_trimmed_even_when_llm_doesnt_flag_it():
+    """Reproduces the real reported bug: 'remove the starting silence from
+    video 1' asked explicitly, but the compose LLM returns an empty
+    trim_leading_silence_video_ids anyway (same unreliability as ordering).
+    _detect_named_silence_trim_targets must catch this from the prompt text
+    alone, independent of what the LLM flagged."""
     seg_a_silence = Segment(id=0, start=0.0, end=2.0, is_silence=True)
     seg_a_content = Segment(id=1, start=2.0, end=6.0, scene_tags=["beach"])
     seg_b_content = Segment(id=0, start=0.0, end=5.0, scene_tags=["studio"])
@@ -163,7 +163,7 @@ def test_named_video_leading_silence_is_trimmed():
             {"video_id": "vid-beach", "segment_id": 0},
             {"video_id": "vid-beach", "segment_id": 1},
         ],
-        "trim_leading_silence_video_ids": ["vid-beach"],
+        "trim_leading_silence_video_ids": [],  # LLM failed to flag it — must still work
     }
 
     with patch("app.compose.llm.complete_json", return_value=llm_response):
@@ -212,11 +212,32 @@ def test_explicit_named_order_overrides_llm_mistake():
     assert [c.video_id for c in edl.clips] == ["vid-1", "vid-2", "vid-3"]
 
 
+def test_silence_trim_only_applies_to_the_named_clause():
+    """'Use video 1 at the start, video 2 in the middle... remove the
+    starting silence from video 1' names BOTH videos in the sentence — only
+    video 1 (the one in the same clause as the silence request) should get
+    trimmed, not video 2 just because it's also mentioned somewhere."""
+    seg_1_silence = Segment(id=0, start=0.0, end=1.5, is_silence=True)
+    seg_1_content = Segment(id=1, start=1.5, end=5.0, scene_tags=["a"])
+    seg_2_silence = Segment(id=0, start=0.0, end=1.0, is_silence=True)
+    seg_2_content = Segment(id=1, start=1.0, end=4.0, scene_tags=["b"])
+    tl_1 = Timeline(video_id="vid-1", duration_sec=5.0, segments=[seg_1_silence, seg_1_content])
+    tl_2 = Timeline(video_id="vid-2", duration_sec=4.0, segments=[seg_2_silence, seg_2_content])
+    video_names = {"vid-1": "1.mp4", "vid-2": "2.mp4"}
+
+    targets = _detect_named_silence_trim_targets(
+        "Use video 1 at the start, video 2 in the middle, remove the starting silence from video 1",
+        video_names,
+    )
+    assert targets == {"vid-1"}
+
+
 if __name__ == "__main__":
     test_merge_before_match_cut_search_range()
     test_match_cut_runs_after_merge_not_before()
     test_match_cut_search_widens_into_unselected_gap()
     test_weak_join_triggers_one_retry()
-    test_named_video_leading_silence_is_trimmed()
+    test_named_video_leading_silence_is_trimmed_even_when_llm_doesnt_flag_it()
     test_explicit_named_order_overrides_llm_mistake()
+    test_silence_trim_only_applies_to_the_named_clause()
     print("compose order tests passed")
